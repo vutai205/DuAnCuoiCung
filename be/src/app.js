@@ -14,6 +14,8 @@ const movieRoutes = require('./routes/movies');
 const roomRoutes = require('./routes/rooms');
 const showtimeRoutes = require('./routes/showtimes');
 const bookingRoutes = require('./routes/bookings');
+const uploadRoutes = require('./routes/uploadRoutes');
+const path = require('path');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
@@ -22,6 +24,11 @@ app.use('/api/movies', movieRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Phục vụ các file tĩnh trong thư mục uploads
+const _dirname = path.resolve();
+app.use('/uploads', express.static(path.join(_dirname, 'uploads')));
 
 app.get('/', (req, res) => {
     res.json({ message: 'Welcome to DuAnCuoiCung Backend API' });
