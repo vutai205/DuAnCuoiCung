@@ -42,7 +42,6 @@ exports.getShowtimeSeats = async (req, res) => {
                 isBooked: bookedSeats.includes(seat)
             };
         });
-
         res.json({
             showtimeId,
             room: showtime.room.name,
@@ -50,6 +49,77 @@ exports.getShowtimeSeats = async (req, res) => {
             seats: seatStatuses
         });
 
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get all showtimes (Admin view)
+// @route   GET /api/showtimes
+// @access  Public/Admin
+exports.getShowtimes = async (req, res) => {
+    try {
+        const showtimes = await Showtime.find({}).populate('movie room');
+        res.json(showtimes);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Create a showtime
+// @route   POST /api/showtimes
+// @access  Private/Admin
+exports.createShowtime = async (req, res) => {
+    try {
+        const { movie, room, startTime, endTime, ticketPrice } = req.body;
+        
+        const showtime = new Showtime({
+            movie,
+            room,
+            startTime,
+            endTime,
+            ticketPrice
+        });
+
+        const createdShowtime = await showtime.save();
+        res.status(201).json(createdShowtime);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Update a showtime
+// @route   PUT /api/showtimes/:id
+// @access  Private/Admin
+exports.updateShowtime = async (req, res) => {
+    try {
+        const showtime = await Showtime.findById(req.params.id);
+
+        if (showtime) {
+            Object.assign(showtime, req.body);
+            const updatedShowtime = await showtime.save();
+            res.json(updatedShowtime);
+        } else {
+            res.status(404).json({ message: 'Showtime not found' });
+        }
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Delete a showtime
+// @route   DELETE /api/showtimes/:id
+// @access  Private/Admin
+exports.deleteShowtime = async (req, res) => {
+    try {
+        const showtime = await Showtime.findById(req.params.id);
+
+        if (showtime) {
+            await showtime.deleteOne();
+            res.json({ message: 'Showtime removed' });
+        } else {
+            res.status(404).json({ message: 'Showtime not found' });
+        }
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -53,3 +53,65 @@ exports.getMyBookings = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// @desc    Get all bookings (Admin)
+// @route   GET /api/bookings
+// @access  Private/Admin
+exports.getBookings = async (req, res) => {
+    try {
+        const bookings = await Booking.find({}).populate('user', 'name email').populate({
+            path: 'showtime',
+            populate: { path: 'movie room' }
+        }).sort({ createdAt: -1 }); // Mới nhất lên đầu
+        res.json(bookings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update booking status
+// @route   PUT /api/bookings/:id/status
+// @access  Private/Admin
+exports.updateBookingStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const booking = await Booking.findById(req.params.id);
+
+        if (booking) {
+            booking.status = status;
+            const updatedBooking = await booking.save();
+            res.json(updatedBooking);
+        } else {
+            res.status(404).json({ message: 'Booking not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get dashboard stats
+// @route   GET /api/bookings/stats
+// @access  Private/Admin
+exports.getDashboardStats = async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const Movie = require('../models/Movie');
+
+        // Tổng doanh thu (chỉ tính những đơn đã confirmed)
+        const bookings = await Booking.find({ status: 'confirmed' });
+        const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0);
+
+        const totalUsers = await User.countDocuments({});
+        const totalMovies = await Movie.countDocuments({});
+        const totalBookings = await Booking.countDocuments({});
+
+        res.json({
+            totalRevenue,
+            totalUsers,
+            totalMovies,
+            totalBookings
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

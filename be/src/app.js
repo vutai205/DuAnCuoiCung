@@ -11,6 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const movieRoutes = require('./routes/movies');
+const roomRoutes = require('./routes/rooms');
 const showtimeRoutes = require('./routes/showtimes');
 const bookingRoutes = require('./routes/bookings');
 
@@ -18,6 +19,7 @@ const bookingRoutes = require('./routes/bookings');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/movies', movieRoutes);
+app.use('/api/rooms', roomRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
 
