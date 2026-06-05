@@ -9,12 +9,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Import Routes
 const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
 const movieRoutes = require('./routes/movies');
 const showtimeRoutes = require('./routes/showtimes');
 const bookingRoutes = require('./routes/bookings');
 
 // Use Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
