@@ -1,2 +1,2 @@
 node_modules/
-.env
+# .env (Dự án học tập, cho phép push lên github)
