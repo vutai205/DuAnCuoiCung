@@ -7,7 +7,6 @@ exports.createBooking = async (req, res) => {
     try {
         const { showtimeId, seats } = req.body;
         // In a real app, userId comes from req.user (JWT middleware)
-        // We'll simulate it for now or require it in body if no middleware yet
         const userId = req.user ? req.user._id : req.body.userId;
 
         if (!userId) {
@@ -18,9 +17,31 @@ exports.createBooking = async (req, res) => {
             return res.status(400).json({ message: 'No seats selected' });
         }
 
-        const showtime = await Showtime.findById(showtimeId);
+        const showtime = await Showtime.findById(showtimeId).populate('room');
         if (!showtime) {
             return res.status(404).json({ message: 'Showtime not found' });
+        }
+
+        // Validate if seats exist in the room layout
+        const validSeats = seats.every(seat => showtime.room.seatLayout.includes(seat));
+        if (!validSeats) {
+            return res.status(400).json({ message: 'Một hoặc nhiều ghế không hợp lệ trong phòng chiếu này' });
+        }
+
+        // Prevent Double Booking
+        const existingBookings = await Booking.find({
+            showtime: showtimeId,
+            status: { $ne: 'cancelled' }
+        });
+
+        let allBookedSeats = [];
+        existingBookings.forEach(b => {
+            allBookedSeats = allBookedSeats.concat(b.seats);
+        });
+
+        const isSeatTaken = seats.some(seat => allBookedSeats.includes(seat));
+        if (isSeatTaken) {
+            return res.status(400).json({ message: 'Một hoặc nhiều ghế bạn chọn đã được người khác đặt. Vui lòng chọn ghế khác!' });
         }
 
         // Calculate total price
