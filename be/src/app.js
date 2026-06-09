@@ -15,6 +15,7 @@ const roomRoutes = require('./routes/rooms');
 const showtimeRoutes = require('./routes/showtimes');
 const bookingRoutes = require('./routes/bookings');
 const uploadRoutes = require('./routes/uploadRoutes');
+const bannerRoutes = require('./routes/banners');
 const path = require('path');
 
 // Use Routes
@@ -25,6 +26,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/showtimes', showtimeRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/banners', bannerRoutes);
 
 // Phục vụ các file tĩnh trong thư mục uploads
 const _dirname = path.resolve();
