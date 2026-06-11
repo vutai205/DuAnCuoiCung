@@ -1,0 +1,152 @@
+.member-container {
+    max-width: 1300px;
+    margin: auto;
+}
+
+.member-title {
+    text-align: center;
+    color: white;
+    margin-bottom: 40px;
+}
+
+.member-content {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 40px;
+}
+
+.member-wrapper {
+    background: #081226;
+    border: 1px solid #1e293b;
+    border-radius: 30px;
+    padding: 40px;
+}
+
+/* CARD */
+
+.cinema-card {
+    width: 320px;
+    height: 540px;
+    border-radius: 20px;
+    overflow: hidden;
+    background: linear-gradient(135deg,
+            #f7d94f,
+            #f59e0b 40%,
+            #3b82f6);
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, .35);
+}
+
+.card-logo {
+    padding: 20px;
+}
+
+.card-logo img {
+    width: 150px;
+}
+
+.card-qr {
+    display: flex;
+    justify-content: center;
+
+    margin-top: 80px;
+}
+
+.card-qr img {
+    width: 220px;
+    background: white;
+    padding: 10px;
+}
+
+.card-footer {
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 40px;
+
+    text-align: center;
+
+    color: white;
+}
+
+.card-footer h3 {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.card-footer p {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+/* INFO */
+
+.member-info {
+    color: white;
+    width: 100%;
+}
+
+/* Make info rows look like the form fields in Profile */
+.info-row {
+    display: block;
+    padding: 0 0 18px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+    margin-bottom: 18px;
+}
+
+.info-row span {
+    display: block;
+    margin-bottom: 10px;
+    color: #e2e8f0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.info-row strong {
+    display: block;
+    padding: 16px 18px;
+    background: #020617;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    color: white;
+    font-size: 15px;
+}
+
+.active-status {
+    color: #22c55e;
+}
+
+.member-alert {
+    margin-top: 30px;
+
+    background: rgba(16, 185, 129, .1);
+
+    border: 1px solid rgba(16, 185, 129, .3);
+
+    border-radius: 20px;
+
+    padding: 25px;
+}
+
+.member-alert h4 {
+    color: #5eead4;
+    margin-bottom: 10px;
+}
+
+.member-alert p {
+    color: #d1fae5;
+}
+
+/* MOBILE */
+
+@media(max-width:992px) {
+
+    .member-content {
+        grid-template-columns: 1fr;
+    }
+
+    .cinema-card {
+        margin: auto;
+    }
+}

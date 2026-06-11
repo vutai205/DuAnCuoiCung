@@ -1,0 +1,39 @@
+.footer {
+    background: #1a1d23;
+    padding: 60px 20px;
+    margin-top: 80px;
+    color: white;
+    text-align: center;
+}
+
+.footer-menu {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 40px;
+
+    margin-bottom: 40px;
+}
+
+.footer-menu a {
+    color: white;
+    text-decoration: none;
+}
+
+.footer-menu a:hover {
+    color: #ff6b6b;
+}
+
+.socials {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+.footer-content {
+    line-height: 2;
+    color: #d1d5db;
+}

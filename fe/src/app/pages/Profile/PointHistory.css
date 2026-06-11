@@ -1,0 +1,47 @@
+.poin-card {
+    background: #0b1220;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 30px;
+    padding: 40px;
+    margin-top: 20px;
+}
+
+.point-table {
+    border: 1px solid #263247;
+    border-radius: 18px;
+    overflow: hidden;
+    min-height: 260px;
+}
+
+.point-header {
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr 1fr;
+    background: transparent;
+    color: #fff;
+    font-weight: 700;
+    border-bottom: 1px solid #263247;
+}
+
+.point-header div {
+    padding: 22px 26px;
+}
+
+.point-row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 2fr 1fr;
+    color: white;
+}
+
+.point-row div {
+    padding: 20px 26px;
+}
+
+.point-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 180px;
+
+    color: rgba(255,255,255,.35);
+    font-size: 28px;
+}
