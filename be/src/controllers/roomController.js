@@ -43,9 +43,16 @@ exports.createRoom = async (req, res) => {
         
         let currentSeatCount = 0;
         for (let i = 0; i < totalRows; i++) {
+            let seatType = 'vip';
+            if (i < 2) seatType = 'regular';
+            if (i === totalRows - 1 && totalRows > 3) seatType = 'couple'; // Đảm bảo có ít nhất 4 hàng mới có couple
+
             for (let j = 1; j <= seatsPerRow; j++) {
                 if (currentSeatCount < totalSeats) {
-                    seatLayout.push(`${rows[i]}${j}`);
+                    seatLayout.push({
+                        seatName: `${rows[i]}${j}`,
+                        type: seatType
+                    });
                     currentSeatCount++;
                 }
             }
@@ -85,9 +92,16 @@ exports.updateRoom = async (req, res) => {
                 
                 let currentSeatCount = 0;
                 for (let i = 0; i < totalRows; i++) {
+                    let seatType = 'vip';
+                    if (i < 2) seatType = 'regular';
+                    if (i === totalRows - 1 && totalRows > 3) seatType = 'couple';
+
                     for (let j = 1; j <= seatsPerRow; j++) {
                         if (currentSeatCount < room.totalSeats) {
-                            seatLayout.push(`${rows[i]}${j}`);
+                            seatLayout.push({
+                                seatName: `${rows[i]}${j}`,
+                                type: seatType
+                            });
                             currentSeatCount++;
                         }
                     }

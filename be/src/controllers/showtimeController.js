@@ -61,10 +61,11 @@ exports.getShowtimeSeats = async (req, res) => {
         });
 
         // 3. Tính toán trạng thái của từng ghế
-        const seatStatuses = seatLayout.map(seat => {
+        const seatStatuses = seatLayout.map(seatObj => {
             return {
-                seatName: seat,
-                isBooked: bookedSeats.includes(seat)
+                seatName: seatObj.seatName,
+                type: seatObj.type,
+                isBooked: bookedSeats.includes(seatObj.seatName)
             };
         });
         res.json({

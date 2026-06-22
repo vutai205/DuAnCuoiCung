@@ -23,7 +23,7 @@ exports.createBooking = async (req, res) => {
         }
 
         // Validate if seats exist in the room layout
-        const validSeats = seats.every(seat => showtime.room.seatLayout.includes(seat));
+        const validSeats = seats.every(seat => showtime.room.seatLayout.some(s => s.seatName === seat));
         if (!validSeats) {
             return res.status(400).json({ message: 'Một hoặc nhiều ghế không hợp lệ trong phòng chiếu này' });
         }
@@ -44,8 +44,17 @@ exports.createBooking = async (req, res) => {
             return res.status(400).json({ message: 'Một hoặc nhiều ghế bạn chọn đã được người khác đặt. Vui lòng chọn ghế khác!' });
         }
 
-        // Calculate total price
-        const totalPrice = showtime.ticketPrice * seats.length;
+        // Calculate total price based on seat types
+        let totalPrice = 0;
+        seats.forEach(seatName => {
+            const seatInfo = showtime.room.seatLayout.find(s => s.seatName === seatName);
+            if (seatInfo) {
+                let seatPrice = showtime.ticketPrice;
+                if (seatInfo.type === 'vip') seatPrice += 10000; // Phụ thu ghế VIP
+                if (seatInfo.type === 'couple') seatPrice += 20000; // Phụ thu ghế Couple
+                totalPrice += seatPrice;
+            }
+        });
 
         const booking = await Booking.create({
             user: userId,
