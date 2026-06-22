@@ -2,12 +2,37 @@ const Showtime = require('../models/Showtime');
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 
-// @desc    Get showtimes for a movie
+// @desc    Get showtimes for a movie (Grouped by Date)
 // @route   GET /api/showtimes/movie/:movieId
 exports.getShowtimesByMovie = async (req, res) => {
     try {
-        const showtimes = await Showtime.find({ movie: req.params.movieId }).populate('room');
-        res.json(showtimes);
+        // 1. Chỉ lấy các suất chiếu chưa diễn ra (>= thời điểm hiện tại)
+        const showtimes = await Showtime.find({ 
+            movie: req.params.movieId,
+            startTime: { $gte: new Date() }
+        })
+        .populate('room', 'name') // Chỉ cần lấy tên phòng
+        .sort({ startTime: 1 }); // Sắp xếp giờ chiếu tăng dần
+
+        // 2. Nhóm các suất chiếu theo Ngày (YYYY-MM-DD) để Frontend dễ render giống rapchieuphimquocgia
+        const grouped = showtimes.reduce((acc, showtime) => {
+            // Lấy ra chuỗi ngày (VD: "2026-06-22")
+            const dateStr = showtime.startTime.toISOString().split('T')[0];
+            
+            if (!acc[dateStr]) {
+                acc[dateStr] = [];
+            }
+            acc[dateStr].push(showtime);
+            return acc;
+        }, {});
+
+        // 3. Chuyển đổi Object thành Mảng để React dễ dùng hàm .map()
+        const result = Object.keys(grouped).map(date => ({
+            date: date,
+            showtimes: grouped[date]
+        }));
+
+        res.json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
