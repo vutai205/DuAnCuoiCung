@@ -20,8 +20,8 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
-    resetPasswordToken: String,
-    resetPasswordExpire: Date
+    resetPasswordOtp: String,
+    resetPasswordOtpExpire: Date
 }, { timestamps: true });
 
 // Hash password before saving

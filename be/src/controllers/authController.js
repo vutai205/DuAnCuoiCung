@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const sendEmail = require('../utils/sendEmail');
 
 // Generate JWT
 const generateToken = (id) => {
@@ -66,6 +67,65 @@ exports.login = async (req, res) => {
 // @desc    Forgot password
 // @route   POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res) => {
-    // Basic implementation placeholder
-    res.status(200).json({ message: 'Forgot password endpoint. In a real app, this sends an email with a token.' });
+    try {
+        const user = await User.findOne({ email: req.body.email });
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản với email này' });
+        }
+
+        // Tạo mã OTP 6 số
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Lưu vào DB, hạn 10 phút
+        user.resetPasswordOtp = otp;
+        user.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        // Gửi email
+        const message = `Xin chào ${user.name},\n\nMã OTP để đặt lại mật khẩu của bạn là: ${otp}\n\nMã này sẽ hết hạn trong 10 phút.\nNếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này.`;
+
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Mã OTP Đặt Lại Mật Khẩu - Hệ Thống Đặt Vé',
+                message
+            });
+            res.status(200).json({ message: 'Đã gửi mã OTP về email của bạn' });
+        } catch (error) {
+            user.resetPasswordOtp = undefined;
+            user.resetPasswordOtpExpire = undefined;
+            await user.save();
+            return res.status(500).json({ message: 'Lỗi hệ thống không thể gửi email. Vui lòng kiểm tra lại cấu hình EMAIL_USER và EMAIL_PASS trong .env' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Reset password
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        const user = await User.findOne({
+            email,
+            resetPasswordOtp: otp,
+            resetPasswordOtpExpire: { $gt: Date.now() } // OTP còn hạn
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Mã OTP không hợp lệ hoặc đã hết hạn' });
+        }
+
+        // Cập nhật mật khẩu
+        user.password = newPassword;
+        user.resetPasswordOtp = undefined;
+        user.resetPasswordOtpExpire = undefined;
+        await user.save();
+
+        res.status(200).json({ message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
