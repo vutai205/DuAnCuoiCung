@@ -4,6 +4,8 @@ import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import { getAuthUser } from './services/authApi';
 import './App.css';
+import AdminLayout from "./layouts/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
 
 function HomePage() {
   const user = getAuthUser();
@@ -30,6 +32,9 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/admin" element={<AdminLayout />}>
+    <Route index element={<Dashboard />} />
+
     </Routes>
   );
 }
