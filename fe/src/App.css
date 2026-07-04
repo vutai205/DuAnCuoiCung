@@ -1,0 +1,40 @@
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #0a0a0f;
+  color: #fff;
+  text-align: center;
+  padding: 2rem;
+}
+
+.home-page h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.home-page p {
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1.5rem;
+}
+
+.home-page__links {
+  display: flex;
+  gap: 1rem;
+}
+
+.home-page__links a {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #e50914, #b20710);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: transform 0.15s;
+}
+
+.home-page__links a:hover {
+  transform: translateY(-2px);
+}
