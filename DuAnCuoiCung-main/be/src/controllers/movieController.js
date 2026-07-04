@@ -1,18 +1,30 @@
-const Movie = require('../models/Movie');
-
-// @desc    Get all movies
-// @route   GET /api/movies
+﻿const Movie = require('../models/Movie');
+const { MIN_AGE_BY_RATING, getMinAge } = require('../utils/ageRating');
 exports.getMovies = async (req, res) => {
     try {
-        const movies = await Movie.find({});
+        const { ageRating, viewerAge } = req.query;
+        const filter = {};
+        if (ageRating) {
+            filter.ageRating = ageRating;
+        }
+        if (viewerAge !== undefined && viewerAge !== '') {
+            const age = Number(viewerAge);
+            if (Number.isNaN(age) || age < 0) {
+                return res.status(400).json({ message: 'Tuoi nguoi xem khong hop le' });
+            }
+            const allowedRatings = Object.keys(MIN_AGE_BY_RATING).filter(
+                (rating) => age >= getMinAge(rating)
+            );
+            filter.ageRating = filter.ageRating
+                ? { $in: allowedRatings.filter((r) => r === filter.ageRating) }
+                : { $in: allowedRatings };
+        }
+        const movies = await Movie.find(filter).sort({ releaseDate: -1 });
         res.json(movies);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
-// @desc    Get single movie
-// @route   GET /api/movies/:id
 exports.getMovieById = async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
@@ -25,10 +37,6 @@ exports.getMovieById = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-// @desc    Create a movie
-// @route   POST /api/movies
-// @access  Private/Admin
 exports.createMovie = async (req, res) => {
     try {
         const movie = new Movie(req.body);
@@ -38,14 +46,9 @@ exports.createMovie = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
-// @desc    Update a movie
-// @route   PUT /api/movies/:id
-// @access  Private/Admin
 exports.updateMovie = async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
-
         if (movie) {
             Object.assign(movie, req.body);
             const updatedMovie = await movie.save();
@@ -57,14 +60,9 @@ exports.updateMovie = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
-
-// @desc    Delete a movie
-// @route   DELETE /api/movies/:id
-// @access  Private/Admin
 exports.deleteMovie = async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
-
         if (movie) {
             await movie.deleteOne();
             res.json({ message: 'Movie removed' });
