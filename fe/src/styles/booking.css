@@ -1,0 +1,346 @@
+.booking-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a12 50%, #0f0f1a 100%);
+  color: #fff;
+  padding: 2rem 1.5rem 3rem;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.booking-header {
+  max-width: 900px;
+  margin: 0 auto 2rem;
+}
+
+.booking-header h1 {
+  font-size: 1.75rem;
+  margin: 0.5rem 0;
+}
+
+.booking-subtitle {
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+.booking-back {
+  color: #d4af37;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.booking-back:hover {
+  color: #f0d060;
+}
+
+.booking-steps {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.booking-step {
+  background: rgba(20, 20, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.booking-step__title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.booking-step__title h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.booking-step__num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e50914, #b20710);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.room-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+
+.room-card:hover {
+  border-color: rgba(229, 9, 20, 0.5);
+  transform: translateY(-2px);
+}
+
+.room-card--active {
+  border-color: #e50914;
+  background: rgba(229, 9, 20, 0.12);
+}
+
+.room-card__icon {
+  font-size: 1.75rem;
+}
+
+.room-card strong {
+  font-size: 1rem;
+}
+
+.room-card span:last-child {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.showtime-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.showtime-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+  text-align: left;
+}
+
+.showtime-card:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.showtime-card--active {
+  border-color: #d4af37;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+.showtime-card__time {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.showtime-card__price {
+  font-size: 0.85rem;
+  color: #d4af37;
+}
+
+.booking-summary {
+  max-width: 900px;
+  margin: 0 auto;
+  background: rgba(20, 20, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.booking-summary h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.booking-summary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+}
+
+.booking-summary li {
+  padding: 0.4rem 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+}
+
+.booking-btn {
+  width: 100%;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #e50914, #b20710);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.booking-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.booking-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.booking-status {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  max-width: 900px;
+  margin: 2rem auto;
+}
+
+.booking-alert {
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.booking-alert--error {
+  background: rgba(229, 9, 20, 0.15);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  color: #ff6b6b;
+}
+
+.booking-alert--success {
+  background: rgba(46, 204, 113, 0.12);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #6ee7a0;
+}
+
+/* Seat map */
+.screen {
+  max-width: 500px;
+  margin: 0 auto 2.5rem;
+  padding: 0.6rem;
+  text-align: center;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+  border-radius: 8px 8px 50% 50%;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.seat-map {
+  max-width: 700px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.seat-row__label {
+  width: 24px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.seat-row__seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  flex: 1;
+}
+
+.seat {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px 6px 2px 2px;
+  border: none;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+
+.seat--demo {
+  display: inline-block;
+  pointer-events: none;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+}
+
+.seat--available {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.seat--available:hover {
+  background: rgba(212, 175, 55, 0.4);
+  transform: scale(1.08);
+}
+
+.seat--selected {
+  background: linear-gradient(135deg, #e50914, #b20710);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.5);
+}
+
+.seat--booked {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+}
+
+.seat-legend {
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.seat-legend span {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .seat {
+    width: 30px;
+    height: 30px;
+    font-size: 0.65rem;
+  }
+
+  .seat-legend {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}

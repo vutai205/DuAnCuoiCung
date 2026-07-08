@@ -1,11 +1,13 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import AuthLayout from '../../components/auth/AuthLayout';
 import { login, saveAuthUser } from '../../services/authApi';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string })?.from || '/movies';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +22,7 @@ export default function LoginPage() {
     try {
       const user = await login({ email, password });
       saveAuthUser(user);
-      navigate('/');
+      navigate(from);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
