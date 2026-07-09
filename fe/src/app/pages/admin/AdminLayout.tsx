@@ -1,19 +1,26 @@
+import { Layout } from "antd";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import Header from "./Header";
+import AdminHeader from "./Header";
+
+const { Sider, Header, Content } = Layout;
 
 export default function AdminLayout() {
-  return (
-    <div style={{ display: "flex" }}>
-      <Sidebar />
+    return (
+        <Layout style={{ minHeight: "100vh" }}>
+            <Sider width={250}>
+                <Sidebar />
+            </Sider>
 
-      <div style={{ flex: 1 }}>
-        <Header />
+            <Layout>
+                <Header style={{ padding: 0 }}>
+                    <AdminHeader />
+                </Header>
 
-        <div style={{ padding: "20px" }}>
-          <Outlet />
-        </div>
-      </div>
-    </div>
-  );
+                <Content style={{ padding: 24 }}>
+                    <Outlet />
+                </Content>
+            </Layout>
+        </Layout>
+    );
 }
