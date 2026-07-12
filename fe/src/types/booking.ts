@@ -33,5 +33,8 @@ export interface Booking {
   showtime: string;
   seats: string[];
   totalPrice: number;
+  originalPrice?: number;
+  promoCode?: string;
+  discountAmount?: number;
   status: string;
 }

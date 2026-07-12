@@ -1,7 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getMovies } from '../services/movieApi';
-import { getAuthUser } from '../services/authApi';
 import type { Movie } from '../types/movie';
 import '../styles/movies.css';
 
@@ -10,7 +9,6 @@ export default function MoviesPage() {
   const [loading, setLoading] = useState(false);
   const [ageRating, setAgeRating] = useState('');
   const [viewerAge, setViewerAge] = useState('');
-  const user = getAuthUser();
 
   const fetchMovies = async () => {
     setLoading(true);
@@ -64,15 +62,9 @@ export default function MoviesPage() {
                   <h3>{m.title}</h3>
                   <p>{m.genre}</p>
                   <span className="movie-card__rating">{m.ageRating}</span>
-                  {user ? (
-                    <Link to={`/booking/${m._id}`} className="movie-card__btn">
-                      Đặt vé
-                    </Link>
-                  ) : (
-                    <Link to="/login" className="movie-card__btn movie-card__btn--login">
-                      Đăng nhập để đặt vé
-                    </Link>
-                  )}
+                  <Link to={`/movies/${m._id}`} className="movie-card__btn movie-card__btn--detail">
+                    Chi tiết & Đánh giá
+                  </Link>
                 </div>
               </div>
             ))}

@@ -5,6 +5,9 @@ const bookingSchema = new mongoose.Schema({
     showtime: { type: mongoose.Schema.Types.ObjectId, ref: 'Showtime', required: true },
     seats: [{ type: String, required: true }],
     totalPrice: { type: Number, required: true },
+    originalPrice: { type: Number },
+    promoCode: { type: String },
+    discountAmount: { type: Number, default: 0 },
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'cancelled'],

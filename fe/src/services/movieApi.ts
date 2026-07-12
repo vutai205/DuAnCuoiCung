@@ -4,6 +4,11 @@ const api = axios.create({
   baseURL: '/api/movies',
   headers: { 'Content-Type': 'application/json' },
 });
+export const getMovieById = async (id: string): Promise<Movie> => {
+  const { data } = await api.get<Movie>(`/${id}`);
+  return data;
+};
+
 export const getMovies = async (filters: MovieFilters = {}): Promise<Movie[]> => {
   const params: Record<string, string> = {};
   if (filters.ageRating) {

@@ -1,0 +1,130 @@
+.promotions-page {
+  min-height: calc(100vh - 60px);
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a12 50%, #0f0f1a 100%);
+}
+
+.promotions-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.promotions-container h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.promotions-desc {
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 2rem;
+}
+
+.promo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.promo-card {
+  background: rgba(20, 20, 30, 0.9);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 14px;
+  padding: 1.25rem;
+  position: relative;
+}
+
+.promo-card__badge {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: linear-gradient(135deg, #d4af37, #b8941f);
+  color: #1a0a12;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+}
+
+.promo-card h3 {
+  margin: 0.5rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.promo-card__desc {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.promo-card__code {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.promo-card__code span {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(212, 175, 55, 0.5);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #d4af37;
+}
+
+.promo-card__code button {
+  padding: 0.5rem 0.85rem;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 8px;
+  color: #d4af37;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.promo-card__meta {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.promo-card__meta li {
+  padding: 0.15rem 0;
+}
+
+.promotions-loading,
+.promotions-empty {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 2rem;
+}
+
+.promotions-alert {
+  background: rgba(229, 9, 20, 0.15);
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  color: #ff6b6b;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.promotions-footer {
+  margin-top: 2rem;
+}
+
+.promotions-link {
+  color: #d4af37;
+  text-decoration: none;
+}
+
+.promotions-link:hover {
+  color: #f0d060;
+}

@@ -1,11 +1,12 @@
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
+const { applyPromoToOrder } = require('./promoController');
 
 // @desc    Create new booking
 // @route   POST /api/bookings
 exports.createBooking = async (req, res) => {
     try {
-        const { showtimeId, seats } = req.body;
+        const { showtimeId, seats, promoCode } = req.body;
         // In a real app, userId comes from req.user (JWT middleware)
         const userId = req.user ? req.user._id : req.body.userId;
 
@@ -44,14 +45,30 @@ exports.createBooking = async (req, res) => {
             return res.status(400).json({ message: 'Một hoặc nhiều ghế bạn chọn đã được người khác đặt. Vui lòng chọn ghế khác!' });
         }
 
-        // Calculate total price
-        const totalPrice = showtime.ticketPrice * seats.length;
+        const originalPrice = showtime.ticketPrice * seats.length;
+        let totalPrice = originalPrice;
+        let discountAmount = 0;
+        let appliedPromoCode = null;
+
+        if (promoCode) {
+            try {
+                const promoResult = await applyPromoToOrder(promoCode, originalPrice);
+                totalPrice = promoResult.finalPrice;
+                discountAmount = promoResult.discount;
+                appliedPromoCode = promoResult.promo.code;
+            } catch (promoError) {
+                return res.status(400).json({ message: promoError.message });
+            }
+        }
 
         const booking = await Booking.create({
             user: userId,
             showtime: showtimeId,
             seats,
-            totalPrice
+            totalPrice,
+            originalPrice,
+            promoCode: appliedPromoCode,
+            discountAmount,
         });
 
         res.status(201).json(booking);

@@ -16,7 +16,15 @@ export const getShowtimeSeats = async (showtimeId: string): Promise<ShowtimeSeat
   return data;
 };
 
-export const createBooking = async (showtimeId: string, seats: string[]): Promise<Booking> => {
-  const { data } = await apiClient.post<Booking>('/api/bookings', { showtimeId, seats });
+export const createBooking = async (
+  showtimeId: string,
+  seats: string[],
+  promoCode?: string
+): Promise<Booking> => {
+  const { data } = await apiClient.post<Booking>('/api/bookings', {
+    showtimeId,
+    seats,
+    promoCode,
+  });
   return data;
 };

@@ -1,5 +1,7 @@
 ﻿import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import MoviesPage from './pages/MoviesPage';
+import MovieDetailPage from './pages/MovieDetailPage';
+import PromotionsPage from './pages/PromotionsPage';
 import BookingPage from './pages/BookingPage';
 import SeatSelectionPage from './pages/SeatSelectionPage';
 import LoginPage from './pages/auth/LoginPage';
@@ -24,6 +26,7 @@ function Navbar() {
       </Link>
       <div className="navbar__links">
         <Link to="/movies">Phim đang chiếu</Link>
+        <Link to="/promotions">Khuyến mại</Link>
         {user ? (
           <>
             <span className="navbar__user">Xin chào, {user.name}</span>
@@ -70,6 +73,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/movies" element={<MoviesPage />} />
+        <Route path="/movies/:movieId" element={<MovieDetailPage />} />
+        <Route path="/promotions" element={<PromotionsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

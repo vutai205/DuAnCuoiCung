@@ -331,6 +331,88 @@
   align-items: center;
 }
 
+.booking-summary__discount {
+  color: #6ee7a0 !important;
+}
+
+/* Promo code */
+.promo-box {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.promo-box label {
+  display: block;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 0.5rem;
+}
+
+.promo-box__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.promo-box__row input {
+  flex: 1;
+  padding: 0.65rem 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.promo-box__btn {
+  padding: 0.65rem 1rem;
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 8px;
+  color: #d4af37;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.promo-box__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.promo-box__btn--remove {
+  background: rgba(229, 9, 20, 0.15);
+  border-color: rgba(229, 9, 20, 0.3);
+  color: #ff6b6b;
+}
+
+.promo-box__error {
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.promo-box__success {
+  color: #6ee7a0;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+.promo-box__link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #d4af37;
+  text-decoration: none;
+}
+
+.promo-box__link:hover {
+  color: #f0d060;
+}
+
 @media (max-width: 600px) {
   .seat {
     width: 30px;

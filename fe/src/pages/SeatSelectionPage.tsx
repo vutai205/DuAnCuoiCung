@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { createBooking, getShowtimeSeats } from '../services/bookingApi';
+import { validatePromo } from '../services/promoApi';
 import type { SeatStatus } from '../types/booking';
+import type { PromoValidation } from '../types/promo';
 import '../styles/booking.css';
 
 function formatPrice(price: number) {
@@ -44,6 +46,11 @@ export default function SeatSelectionPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [promoInput, setPromoInput] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<PromoValidation | null>(null);
+
   useEffect(() => {
     if (!showtimeId) return;
 
@@ -70,7 +77,9 @@ export default function SeatSelectionPage() {
   }, [showtimeId]);
 
   const seatRows = useMemo(() => groupSeatsByRow(seats), [seats]);
-  const totalPrice = selectedSeats.length * ticketPrice;
+  const originalPrice = selectedSeats.length * ticketPrice;
+  const discountAmount = appliedPromo?.discount ?? 0;
+  const totalPrice = appliedPromo?.finalPrice ?? originalPrice;
 
   const toggleSeat = (seat: SeatStatus) => {
     if (seat.isBooked) return;
@@ -79,6 +88,34 @@ export default function SeatSelectionPage() {
         ? prev.filter((s) => s !== seat.seatName)
         : [...prev, seat.seatName]
     );
+    setAppliedPromo(null);
+    setPromoError('');
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim() || originalPrice === 0) return;
+
+    setPromoLoading(true);
+    setPromoError('');
+    try {
+      const result = await validatePromo(promoInput.trim(), originalPrice);
+      setAppliedPromo(result);
+    } catch (err) {
+      setAppliedPromo(null);
+      if (axios.isAxiosError(err)) {
+        setPromoError(err.response?.data?.message || 'Mã giảm giá không hợp lệ.');
+      } else {
+        setPromoError('Mã giảm giá không hợp lệ.');
+      }
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoInput('');
+    setPromoError('');
   };
 
   const handleBooking = async () => {
@@ -89,7 +126,7 @@ export default function SeatSelectionPage() {
     setSuccess('');
 
     try {
-      await createBooking(showtimeId, selectedSeats);
+      await createBooking(showtimeId, selectedSeats, appliedPromo?.promo.code);
       setSuccess('Đặt vé thành công!');
       setTimeout(() => navigate('/movies'), 2000);
     } catch (err) {
@@ -161,6 +198,42 @@ export default function SeatSelectionPage() {
 
           <div className="booking-summary">
             <h3>Thông tin đặt vé</h3>
+
+            <div className="promo-box">
+              <label htmlFor="promo-code">Mã giảm giá / Khuyến mại</label>
+              <div className="promo-box__row">
+                <input
+                  id="promo-code"
+                  type="text"
+                  value={promoInput}
+                  onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                  placeholder="Nhập mã (VD: CINE10)"
+                  disabled={!!appliedPromo}
+                />
+                {appliedPromo ? (
+                  <button type="button" className="promo-box__btn promo-box__btn--remove" onClick={handleRemovePromo}>
+                    Xóa
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="promo-box__btn"
+                    onClick={handleApplyPromo}
+                    disabled={!promoInput.trim() || originalPrice === 0 || promoLoading}
+                  >
+                    {promoLoading ? '...' : 'Áp dụng'}
+                  </button>
+                )}
+              </div>
+              {promoError && <p className="promo-box__error">{promoError}</p>}
+              {appliedPromo && (
+                <p className="promo-box__success">
+                  Đã áp dụng <strong>{appliedPromo.promo.code}</strong> — {appliedPromo.promo.title}
+                </p>
+              )}
+              <Link to="/promotions" className="promo-box__link">Xem tất cả mã khuyến mại →</Link>
+            </div>
+
             <ul>
               <li>
                 <strong>Ghế đã chọn:</strong>{' '}
@@ -169,6 +242,16 @@ export default function SeatSelectionPage() {
               <li>
                 <strong>Số lượng:</strong> {selectedSeats.length} vé
               </li>
+              {appliedPromo && (
+                <>
+                  <li>
+                    <strong>Tạm tính:</strong> {formatPrice(originalPrice)}
+                  </li>
+                  <li className="booking-summary__discount">
+                    <strong>Giảm giá:</strong> -{formatPrice(discountAmount)}
+                  </li>
+                </>
+              )}
               <li>
                 <strong>Tổng tiền:</strong> {formatPrice(totalPrice)}
               </li>

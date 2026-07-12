@@ -124,6 +124,12 @@
   opacity: 0.9;
 }
 
+.movie-card__btn--detail {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin-bottom: 0;
+}
+
 .movie-card__btn--login {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
