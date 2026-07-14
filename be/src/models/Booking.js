@@ -8,7 +8,12 @@ const bookingSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'cancelled'],
-        default: 'confirmed'
+        default: 'pending' // Default to pending until VNPay confirms
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['unpaid', 'paid', 'failed'],
+        default: 'unpaid'
     }
 }, { timestamps: true });
 
