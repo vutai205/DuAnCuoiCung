@@ -1,99 +1,100 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
 import Card from "../../components/admin/Card";
 
 const Dashboard = () => {
+    const [stats, setStats] = useState({
+        totalMovies: 0,
+        totalUsers: 0,
+        totalBookings: 0,
+        totalRevenue: 0,
+    });
+    const [recentBookings, setRecentBookings] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const token = localStorage.getItem("token") || JSON.parse(localStorage.getItem("user") || "{}").token;
+                const config = {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                };
+
+                const statsRes = await axios.get("/api/bookings/stats", config);
+                setStats(statsRes.data);
+
+                const bookingsRes = await axios.get("/api/bookings", config);
+                setRecentBookings(bookingsRes.data.slice(0, 5));
+            } catch (err) {
+                console.error("Error fetching dashboard stats:", err);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
     return (
         <>
-
             <div className="dashboard">
-
                 <Card
                     title="Movies"
-                    total={30}
+                    total={stats.totalMovies}
                     color="#2563eb"
                 />
 
                 <Card
                     title="Users"
-                    total={220}
+                    total={stats.totalUsers}
                     color="#16a34a"
                 />
 
                 <Card
                     title="Bookings"
-                    total={106}
+                    total={stats.totalBookings}
                     color="#dc2626"
                 />
 
                 <Card
                     title="Revenue"
-                    total={800}
+                    total={stats.totalRevenue}
                     color="#ca8a04"
                 />
-
             </div>
 
             <div className="dashboard-table">
-
                 <div className="box">
-
-                    <h2>Recent Booking</h2>
-
+                    <h2>Recent Bookings</h2>
                     <table>
-
                         <thead>
-
                             <tr>
-
                                 <th>User</th>
-
                                 <th>Movie</th>
-
                                 <th>Status</th>
-
                             </tr>
-
                         </thead>
-
                         <tbody>
-
-                            <tr>
-
-                                <td>Nguyen Van A</td>
-
-                                <td>Avengers</td>
-
-                                <td>
-                                    <span className="success">
-                                        Success
-                                    </span>
-                                </td>
-
-                            </tr>
-
-                            <tr>
-
-                                <td>Tran Van B</td>
-
-                                <td>Batman</td>
-
-                                <td>
-
-                                    <span className="pending">
-                                        Pending
-                                    </span>
-
-                                </td>
-
-                            </tr>
-
+                            {recentBookings.length === 0 ? (
+                                <tr>
+                                    <td colSpan={3} className="text-center">No recent bookings</td>
+                                </tr>
+                            ) : (
+                                recentBookings.map((b) => (
+                                    <tr key={b._id}>
+                                        <td>{b.user?.name || b.user?.email || "Unknown User"}</td>
+                                        <td>{b.showtime?.movie?.title || "Unknown Movie"}</td>
+                                        <td>
+                                            <span className={b.status === "confirmed" ? "success" : b.status === "cancelled" ? "cancelled" : "pending"}>
+                                                {b.status === "confirmed" ? "Success" : b.status === "cancelled" ? "Cancelled" : "Pending"}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
-
                     </table>
-
                 </div>
-
             </div>
-
         </>
     );
 };

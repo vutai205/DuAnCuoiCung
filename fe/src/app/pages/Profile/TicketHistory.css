@@ -46,3 +46,18 @@
     background: #475569;
     transition: .3s;
 }
+
+.status-confirmed {
+    color: #4ade80;
+    font-weight: 600;
+}
+
+.status-cancelled {
+    color: #f87171;
+    font-weight: 600;
+}
+
+.status-pending {
+    color: #fb923c;
+    font-weight: 600;
+}

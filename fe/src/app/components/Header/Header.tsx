@@ -1,20 +1,24 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getAuthUser, logout } from "../../../services/authApi";
 import "./Header.css";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const user = getAuthUser();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/";
+    logout();
+    setOpen(false);
+    navigate("/");
   };
 
   return (
     <header className="header">
       <div className="header-container">
 
-        <div className="logo">
+        <div className="logo" style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
           <img
             src="https://chieuphimquocgia.com.vn/_next/static/media/logo.9f3e8e6f.png"
             alt="logo"
@@ -32,37 +36,50 @@ export default function Header() {
         </nav>
 
         <div className="user-box">
-          <span>Đức Việt Anh</span>
+          {user ? (
+            <>
+              <span>{user.name}</span>
 
-          <div className="user-dropdown">
-            <button
-              className="member-btn"
-              onClick={() => setOpen(!open)}
-            >
-              MEMBER ▼
-            </button>
-
-            {open && (
-              <div className="dropdown-menu">
-
-                <Link to="/profile">
-                  Thông tin cá nhân
-                </Link>
-
-                <Link to="/member-card">
-                  Thẻ thành viên
-                </Link>
-
+              <div className="user-dropdown">
                 <button
-                  className="logout-btn"
-                  onClick={handleLogout}
+                  className="member-btn"
+                  onClick={() => setOpen(!open)}
                 >
-                  Đăng xuất
+                  MEMBER ▼
                 </button>
 
+                {open && (
+                  <div className="user-dropdown-menu">
+                    {user.role === "admin" && (
+                      <Link to="/admin" onClick={() => setOpen(false)}>
+                        Trang quản trị
+                      </Link>
+                    )}
+
+                    <Link to="/profile" onClick={() => setOpen(false)}>
+                      Thông tin cá nhân
+                    </Link>
+
+                    <Link to="/member-card" onClick={() => setOpen(false)}>
+                      Thẻ thành viên
+                    </Link>
+
+                    <button
+                      className="logout-btn"
+                      onClick={handleLogout}
+                    >
+                      Đăng xuất
+                    </button>
+
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <Link to="/login" className="login-nav-btn">
+              Đăng nhập
+            </Link>
+          )}
         </div>
 
       </div>

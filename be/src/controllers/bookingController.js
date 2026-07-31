@@ -1,11 +1,28 @@
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 
+const expirePendingBookings = async (showtimeId) => {
+    const holdTimeoutMs = 5 * 60 * 1000; // 5 minutes
+    await Booking.updateMany({
+        showtime: showtimeId,
+        status: 'pending',
+        createdAt: { $lt: new Date(Date.now() - holdTimeoutMs) }
+    }, {
+        status: 'cancelled',
+        paymentStatus: 'failed'
+    });
+};
+
+exports.expirePendingBookings = expirePendingBookings;
+
 // @desc    Create new booking
 // @route   POST /api/bookings
 exports.createBooking = async (req, res) => {
     try {
         const { showtimeId, seats } = req.body;
+        
+        // Auto-expire pending seat holds older than 5 minutes for this showtime
+        await expirePendingBookings(showtimeId);
         // In a real app, userId comes from req.user (JWT middleware)
         const userId = req.user ? req.user._id : req.body.userId;
 
@@ -141,6 +158,32 @@ exports.getDashboardStats = async (req, res) => {
             totalMovies,
             totalBookings
         });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Check-in ticket at cinema
+// @route   PUT /api/bookings/:id/checkin
+// @access  Private/Admin
+exports.checkinBooking = async (req, res) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Không tìm thấy vé đặt!' });
+        }
+
+        if (booking.isCheckedIn) {
+            return res.status(400).json({ message: 'Vé này đã được check-in trước đó rồi!' });
+        }
+
+        booking.isCheckedIn = true;
+        booking.status = 'confirmed';
+        booking.paymentStatus = 'paid';
+        
+        const updatedBooking = await booking.save();
+        res.json(updatedBooking);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

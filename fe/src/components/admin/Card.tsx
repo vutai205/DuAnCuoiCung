@@ -5,6 +5,10 @@ interface Props {
 }
 
 const Card = ({ title, total, color }: Props) => {
+    const formattedTotal = title === "Revenue"
+        ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(total)
+        : total;
+
     return (
         <div
             className="card"
@@ -14,7 +18,7 @@ const Card = ({ title, total, color }: Props) => {
         >
             <h3>{title}</h3>
 
-            <h1>{total}</h1>
+            <h1>{formattedTotal}</h1>
         </div>
     );
 };

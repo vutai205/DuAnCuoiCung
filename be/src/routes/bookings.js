@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { createBooking, getMyBookings, getBookings, getDashboardStats, updateBookingStatus } = require('../controllers/bookingController');
+const { 
+    createBooking, 
+    getMyBookings, 
+    getBookings, 
+    getDashboardStats, 
+    updateBookingStatus,
+    checkinBooking
+} = require('../controllers/bookingController');
 const { protect, admin } = require('../middlewares/authMiddleware');
 
 // User routes
@@ -11,5 +18,6 @@ router.get('/my-bookings', protect, getMyBookings);
 router.get('/stats', protect, admin, getDashboardStats);
 router.get('/', protect, admin, getBookings);
 router.put('/:id/status', protect, admin, updateBookingStatus);
+router.put('/:id/checkin', protect, admin, checkinBooking);
 
 module.exports = router;

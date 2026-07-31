@@ -163,7 +163,7 @@ const UserTable = ({
 
                                                 {
 
-                                                    user.status
+                                                    user.status !== false
 
                                                         ?
 
@@ -229,7 +229,7 @@ const UserTable = ({
                                                     <button
 
                                                         className={
-                                                            user.status
+                                                            user.status !== false
                                                                 ? "btn btn-secondary btn-sm"
                                                                 : "btn btn-success btn-sm"
                                                         }
@@ -242,7 +242,7 @@ const UserTable = ({
 
                                                         {
 
-                                                            user.status
+                                                            user.status !== false
 
                                                                 ?
 

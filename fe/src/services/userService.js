@@ -1,9 +1,13 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/users";
+const API_URL = "/api/users";
 
 const getToken = () => {
-    const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+    const token = localStorage.getItem("token");
+    if (token) return token;
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (user?.token) return user.token;
+    const userInfo = JSON.parse(localStorage.getItem("userInfo") || "null");
     return userInfo?.token;
 };
 

@@ -14,6 +14,10 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         enum: ['unpaid', 'paid', 'failed'],
         default: 'unpaid'
+    },
+    isCheckedIn: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

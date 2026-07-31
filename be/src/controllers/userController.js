@@ -119,3 +119,76 @@ exports.updateUserProfile = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 };
+
+// @desc    Create new user
+// @route   POST /api/users
+// @access  Private/Admin
+exports.createUser = async (req, res) => {
+    try {
+        const { name, email, password, role } = req.body;
+
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({ message: 'User already exists' });
+        }
+
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role: role || 'user',
+            status: true
+        });
+
+        res.status(201).json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status
+        });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// @desc    Search users by name or email
+// @route   GET /api/users/search
+// @access  Private/Admin
+exports.searchUser = async (req, res) => {
+    try {
+        const keyword = req.query.keyword;
+        const query = keyword
+            ? {
+                  $or: [
+                      { name: { $regex: keyword, $options: 'i' } },
+                      { email: { $regex: keyword, $options: 'i' } }
+                  ]
+              }
+            : {};
+
+        const users = await User.find(query).select('-password');
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Toggle user status (Lock/Unlock)
+// @route   PUT /api/users/status/:id
+// @access  Private/Admin
+exports.toggleStatus = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+
+        if (user) {
+            user.status = !user.status;
+            await user.save();
+            res.json({ message: `User status changed to ${user.status ? 'Active' : 'Locked'}` });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

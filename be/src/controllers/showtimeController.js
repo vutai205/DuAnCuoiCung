@@ -1,6 +1,7 @@
 const Showtime = require('../models/Showtime');
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
+const { expirePendingBookings } = require('./bookingController');
 
 // @desc    Get showtimes for a movie (Grouped by Date)
 // @route   GET /api/showtimes/movie/:movieId
@@ -44,6 +45,9 @@ exports.getShowtimeSeats = async (req, res) => {
     try {
         const showtimeId = req.params.id;
         
+        // Auto-expire pending seat holds older than 5 minutes for this showtime
+        await expirePendingBookings(showtimeId);
+
         // 1. Lấy thông tin showtime & room
         const showtime = await Showtime.findById(showtimeId).populate('room');
         if (!showtime) {
