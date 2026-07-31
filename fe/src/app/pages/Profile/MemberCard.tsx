@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import "./MemberCard.css";
 
 export default function MemberCard() {
