@@ -8,6 +8,14 @@ import './App.css';
 // Admin components from local HEAD layout/pages
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
+import MovieList from "./pages/admin/movie/MovieList";
+import MovieAdd from "./pages/admin/movie/MovieAdd";
+import MovieEdit from "./pages/admin/movie/MovieEdit";
+// @ts-ignore
+import UserManager from "./pages/admin/UserManager";
+import Banner from "./pages/admin/Banner";
+import Rooms from "./pages/admin/Rooms";
+import Showtimes from "./pages/admin/Showtimes";
 
 // Customer components from remote kiem-thu branch
 import Header from "./app/components/Header/Header";
@@ -61,6 +69,13 @@ function App() {
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="movies" element={<MovieList />} />
+          <Route path="movies/add" element={<MovieAdd />} />
+          <Route path="movies/edit/:id" element={<MovieEdit />} />
+          <Route path="banner" element={<Banner />} />
+          <Route path="rooms" element={<Rooms />} />
+          <Route path="showtimes" element={<Showtimes />} />
+          <Route path="users" element={<UserManager />} />
           <Route path="foods" element={<FoodList />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="bookings" element={<BookingList />} />

@@ -6,7 +6,9 @@ import {
   FaDoorOpen,
   FaImages,
   FaChartBar,
-  FaClock
+  FaClock,
+  FaUtensils,
+  FaUserFriends
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -45,6 +47,16 @@ const Sidebar = () => {
       title: "Bookings",
       icon: <FaTicketAlt />,
       path: "/admin/bookings"
+    },
+    {
+      title: "Foods",
+      icon: <FaUtensils />,
+      path: "/admin/foods"
+    },
+    {
+      title: "Customers",
+      icon: <FaUserFriends />,
+      path: "/admin/customers"
     }
   ];
 
