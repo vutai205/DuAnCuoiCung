@@ -1,0 +1,48 @@
+.ticket-card {
+    background: #0b1220;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 30px;
+    padding: 40px;
+    margin-top: 20px;
+}
+
+.ticket-table {
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid #263247;
+}
+
+.table-header {
+    display: grid;
+    grid-template-columns: 220px 1fr 200px 100px 150px;
+    background: #0f172a;
+    color: white;
+    font-weight: 700;
+}
+
+.table-header div {
+    padding: 22px 26px;
+}
+
+.table-row {
+    display: grid;
+    grid-template-columns: 220px 1fr 200px 100px 150px;
+    color: white;
+}
+
+.table-row div {
+    padding: 22px 26px;
+}
+
+.active-row {
+    background: #374151;
+}
+
+.table-row:not(.active-row) {
+    background: #111827;
+}
+
+.table-row:hover {
+    background: #475569;
+    transition: .3s;
+}
