@@ -937,3 +937,12 @@
 [2026-08-06T02:18:23.697Z] GET /api/banners 304 - 32ms
 [2026-08-06T02:18:23.696Z] GET /api/movies 304 - 34ms
 [2026-08-06T02:20:21.173Z] GET /api/movies 304 - 28ms
+[2026-08-06T02:21:01.429Z] GET /api/movies 304 - 27ms
+[2026-08-06T02:21:11.024Z] GET /api/movies/6a73e681bbb5e9f947a3cea6 304 - 33ms
+[2026-08-06T02:21:11.026Z] GET /api/showtimes/movie/6a73e681bbb5e9f947a3cea6 304 - 58ms
+[2026-08-06T02:21:11.059Z] GET /api/movies/6a73e681bbb5e9f947a3cea6 304 - 28ms
+[2026-08-06T02:21:11.087Z] GET /api/showtimes/movie/6a73e681bbb5e9f947a3cea6 304 - 144ms
+[2026-08-06T02:21:12.925Z] GET /api/banners 304 - 33ms
+[2026-08-06T02:21:12.929Z] GET /api/movies 304 - 31ms
+[2026-08-06T02:21:12.962Z] GET /api/banners 304 - 27ms
+[2026-08-06T02:21:12.963Z] GET /api/movies 304 - 27ms
