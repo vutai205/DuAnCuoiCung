@@ -4,10 +4,9 @@ import axios from 'axios';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import { getAuthUser } from './services/authApi';
 import './App.css';
 
-// Admin components from local HEAD layout/pages
+// Admin components
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import MovieList from "./pages/admin/movie/MovieList";
@@ -18,22 +17,23 @@ import UserManager from "./pages/admin/UserManager";
 import Banner from "./pages/admin/Banner";
 import Rooms from "./pages/admin/Rooms";
 import Showtimes from "./pages/admin/Showtimes";
-
-// Customer components from remote kiem-thu branch
-import Header from "./app/components/Header/Header";
-import Footer from "./app/components/Footer/Footer";
-import Profile from "./app/pages/Profile/Profile";
-import MemberCard from "./app/pages/Profile/MemberCard";
-
-// Admin components from remote kiem-thu branch
 import FoodList from "./app/pages/admin/Food/FoodList";
 import CustomerList from "./app/pages/admin/Customer/CustomerList";
 import BookingList from "./app/pages/admin/Booking/BookingList";
 
+// Customer components
+import Header from "./app/components/Header/Header";
+import Footer from "./app/components/Footer/Footer";
+import Profile from "./app/pages/Profile/Profile";
+import MemberCard from "./app/pages/Profile/MemberCard";
+import BannerSlider from "./app/components/BannerSlider/BannerSlider";
+import MovieDetailPage from "./pages/customer/MovieDetailPage";
+import BookingPage from "./pages/customer/BookingPage";
+
 function HomePage() {
-  const user = getAuthUser();
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'showing' | 'upcoming'>('showing');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -49,45 +49,74 @@ function HomePage() {
     fetchMovies();
   }, []);
 
+  const filteredMovies = activeTab === 'showing' 
+    ? movies 
+    : movies.slice().reverse();
+
   return (
     <div className="home-page-container">
-      {/* Hero section */}
-      <div className="hero-section">
-        <h1>CineTicket</h1>
-        <p>Chào mừng{user ? `, ${user.name}` : ''}! Hệ thống đặt vé xem phim trực tuyến hàng đầu.</p>
-        {!user && (
-          <div className="home-page__links">
-            <Link to="/login" className="btn-primary">Đăng nhập</Link>
-            <Link to="/register" className="btn-secondary">Đăng ký</Link>
-          </div>
-        )}
-      </div>
+      {/* Banner Slider */}
+      <BannerSlider />
 
-      {/* Movies section */}
-      <div className="movies-section">
-        <h2 className="section-title">Phim Đang Chiếu</h2>
-        {loading ? (
-          <div className="loading-spinner">Đang tải danh sách phim...</div>
-        ) : movies.length === 0 ? (
-          <div className="no-movies">Hiện tại chưa có phim nào được chiếu.</div>
-        ) : (
-          <div className="movie-grid">
-            {movies.map((movie) => (
-              <div className="movie-card" key={movie._id}>
-                <div className="poster-container">
-                  <img src={movie.poster || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'} alt={movie.title} className="movie-poster" />
-                  <span className="duration-tag">{movie.duration} phút</span>
+      {/* Main Content Area */}
+      <div className="main-content-wrapper">
+        {/* Navigation Tabs */}
+        <div className="movie-tabs-container">
+          <button
+            className={`tab-btn ${activeTab === 'showing' ? 'active' : ''}`}
+            onClick={() => setActiveTab('showing')}
+          >
+            🔥 PHIM ĐANG CHIẾU
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setActiveTab('upcoming')}
+          >
+            ⏳ PHIM SẮP CHIẾU
+          </button>
+        </div>
+
+        {/* Movies Grid Section */}
+        <div className="movies-section">
+          {loading ? (
+            <div className="loading-spinner-box">
+              <div className="spinner"></div>
+              <span>Đang tải danh sách phim...</span>
+            </div>
+          ) : filteredMovies.length === 0 ? (
+            <div className="no-movies-box">Hiện tại chưa có phim nào trong mục này.</div>
+          ) : (
+            <div className="movie-grid">
+              {filteredMovies.map((movie) => (
+                <div className="movie-card" key={movie._id}>
+                  <div className="poster-container">
+                    <img 
+                      src={movie.poster || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'} 
+                      alt={movie.title} 
+                      className="movie-poster" 
+                    />
+                    <span className="duration-tag">{movie.duration} phút</span>
+                    <div className="poster-overlay">
+                      <Link to={`/movie/${movie._id}`} className="btn-overlay-book">
+                        MUA VÉ NGAY
+                      </Link>
+                    </div>
+                  </div>
+                  <div className="movie-info">
+                    <span className="movie-genre">{movie.genre}</span>
+                    <h3 className="movie-title">{movie.title}</h3>
+                    <p className="movie-desc">{movie.description}</p>
+                    <div className="card-action-bar">
+                      <Link to={`/movie/${movie._id}`} className="book-btn">
+                        Chi Tiết & Đặt Vé
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-                <div className="movie-info">
-                  <span className="movie-genre">{movie.genre}</span>
-                  <h3 className="movie-title">{movie.title}</h3>
-                  <p className="movie-desc">{movie.description}</p>
-                  <Link to="/profile" className="book-btn">Đặt vé ngay</Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -104,8 +133,10 @@ function App() {
       {showHeaderFooter && <Header />}
 
       <Routes>
-        {/* User routes */}
+        {/* Customer routes */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/movie/:id" element={<MovieDetailPage />} />
+        <Route path="/booking/:showtimeId" element={<BookingPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/member-card" element={<MemberCard />} />
 
@@ -130,7 +161,7 @@ function App() {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       {showHeaderFooter && <Footer />}

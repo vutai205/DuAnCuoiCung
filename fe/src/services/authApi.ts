@@ -43,6 +43,10 @@ export const getAuthUser = (): AuthUser | null => {
   }
 };
 
+export const getToken = (): string => {
+  return localStorage.getItem('token') || '';
+};
+
 export const logout = (): void => {
   localStorage.removeItem('user');
   localStorage.removeItem('token');
