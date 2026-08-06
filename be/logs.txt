@@ -946,3 +946,7 @@
 [2026-08-06T02:21:12.929Z] GET /api/movies 304 - 31ms
 [2026-08-06T02:21:12.962Z] GET /api/banners 304 - 27ms
 [2026-08-06T02:21:12.963Z] GET /api/movies 304 - 27ms
+[2026-08-06T02:23:16.065Z] GET /api/banners 304 - 26ms
+[2026-08-06T02:23:16.063Z] GET /api/movies 304 - 29ms
+[2026-08-06T02:23:16.094Z] GET /api/movies 304 - 26ms
+[2026-08-06T02:23:16.093Z] GET /api/banners 304 - 27ms

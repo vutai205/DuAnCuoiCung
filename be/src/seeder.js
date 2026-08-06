@@ -111,48 +111,113 @@ const seedData = async () => {
         await food3.save();
         console.log('Đã khởi tạo danh sách Đồ ăn & Nước uống!');
 
-        // 4. Seed Movies
-        const movie1 = new Movie({
-            title: 'Lật Mặt 7: Một Điều Ước',
-            description: 'Bộ phim tâm lý gia đình đầy cảm xúc của đạo diễn Lý Hải, xoay quanh hành trình tình mẫu tử thiêng liêng và ước mơ giản dị của người mẹ hiền hậu tại vùng quê yên bình.',
-            duration: 120,
-            poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&q=80',
-            genre: 'Tình Cảm / Gia Đình',
-            releaseDate: new Date('2024-04-30')
-        });
+        // 4. Seed 12 Movies
+        const moviesList = [
+            {
+                title: 'Lật Mặt 7: Một Điều Ước',
+                description: 'Bộ phim tâm lý gia đình đầy cảm xúc của đạo diễn Lý Hải, xoay quanh hành trình tình mẫu tử thiêng liêng và ước mơ giản dị của người mẹ hiền hậu tại vùng quê yên bình.',
+                duration: 120,
+                poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=600&q=80',
+                genre: 'Tình Cảm / Gia Đình',
+                releaseDate: new Date('2024-04-30')
+            },
+            {
+                title: 'Dune: Hành Tinh Cát 2',
+                description: 'Hành trình trả thù và bảo vệ vũ trụ của Paul Atreides khi anh hợp lực cùng Chani và người Fremen trên hành tinh cát Arrakis khắc nghiệt.',
+                duration: 166,
+                poster: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80',
+                genre: 'Khoa Học Viễn Tưởng / Hành Động',
+                releaseDate: new Date('2024-03-01')
+            },
+            {
+                title: 'Kung Fu Panda 4',
+                description: 'Chú gấu Po phải tìm kiếm và huấn luyện một chiến binh Rồng mới trong khi đối đầu với mụ phù thủy biến hình Chameleonic đầy mưu mẹo.',
+                duration: 94,
+                poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&q=80',
+                genre: 'Hoạt Hình / Hài Hước',
+                releaseDate: new Date('2024-03-08')
+            },
+            {
+                title: 'Godzilla x Kong: Đế Chế Mới',
+                description: 'Hai siêu quái vật huyền thoại Godzilla và Kong hợp lực chống lại một hiểm họa cổ đại tiềm ẩn sâu bên trong Trái Đất.',
+                duration: 115,
+                poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80',
+                genre: 'Hành Động / Viễn Tưởng',
+                releaseDate: new Date('2024-03-29')
+            },
+            {
+                title: 'Deadpool & Wolverine',
+                description: 'Bom tấn siêu hành động hài hước của Marvel khi Deadpool hợp lực cùng Wolverine trong hành trình giải cứu đa vũ trụ khỏi nguy cơ diệt vong.',
+                duration: 127,
+                poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&q=80',
+                genre: 'Hành Động / Hài Hước',
+                releaseDate: new Date('2024-07-26')
+            },
+            {
+                title: 'Inside Out 2: Những Mảnh Ghép Cảm Xúc 2',
+                description: 'Bộ phim hoạt hình rực rỡ sắc màu theo chân cô bé Riley khi bước vào tuổi dậy thì với sự xuất hiện của cảm xúc mới đầy xáo trộn: Lo Âu (Anxiety).',
+                duration: 96,
+                poster: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=600&q=80',
+                genre: 'Hoạt Hình / Gia Đình',
+                releaseDate: new Date('2024-06-14')
+            },
+            {
+                title: 'Kẻ Trộm Mặt Trăng 4 (Despicable Me 4)',
+                description: 'Cuộc phiêu lưu tràn ngập tiếng cười của Gru và đại gia đình Minions tinh nghịch khi đối đầu với kẻ thù mới nguy hiểm Maxime Le Mal.',
+                duration: 95,
+                poster: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&q=80',
+                genre: 'Hoạt Hình / Hài Hước',
+                releaseDate: new Date('2024-07-03')
+            },
+            {
+                title: 'Chị Chị Em Em 2',
+                description: 'Bộ phim giật gân, đấu trí nảy lửa và đầy quyến rũ xoay quanh cuộc sống vinh hoa cùng những góc khuất bí ẩn của hai mỹ nhân sài thành.',
+                duration: 115,
+                poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600&q=80',
+                genre: 'Tâm Lý / Giật Gân',
+                releaseDate: new Date('2024-01-22')
+            },
+            {
+                title: 'Venom: Kèo Cuối (The Last Dance)',
+                description: 'Trận chiến sinh tử cuối cùng của Eddie Brock và Venom trước cuộc truy quét gắt gao của cả loài người lẫn chủng loài ngoài hành tinh.',
+                duration: 110,
+                poster: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?w=600&q=80',
+                genre: 'Hành Động / Viễn Tưởng',
+                releaseDate: new Date('2024-10-25')
+            },
+            {
+                title: 'Cám: Chuyện Chưa Kể (Con Cám)',
+                description: 'Góc nhìn kinh dị chưa từng được hé lộ về truyện cổ tích Tấm Cám với những bí ẩn rùng rợn và nghi thức bí ẩn tại làng quê cổ xưa.',
+                duration: 122,
+                poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=600&q=80',
+                genre: 'Kinh Dị / Bổn Mạng',
+                releaseDate: new Date('2024-09-20')
+            },
+            {
+                title: 'Ma Da: Truyền Thuyết Sông Nước',
+                description: 'Bộ phim kinh dị lấy cảm hứng từ truyền thuyết dân gian miền sông nước Nam Bộ đầy bí ẩn, kịch tính và lạnh gáy.',
+                duration: 98,
+                poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80',
+                genre: 'Kinh Dị / Tâm Lý',
+                releaseDate: new Date('2024-08-16')
+            },
+            {
+                title: 'Biệt Đội Marvels (The Marvels)',
+                description: 'Nữ đại úy Captain Marvel hợp lực cùng Kamala Khan và Monica Rambeau trong trận chiến bảo vệ sự ổn định của đa vũ trụ.',
+                duration: 105,
+                poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&q=80',
+                genre: 'Hành Động / Viễn Tưởng',
+                releaseDate: new Date('2023-11-10')
+            }
+        ];
 
-        const movie2 = new Movie({
-            title: 'Dune: Hành Tinh Cát 2',
-            description: 'Hành trình trả thù và bảo vệ vũ trụ của Paul Atreides khi anh hợp lực cùng Chani và người Fremen trên hành tinh cát Arrakis khắc nghiệt.',
-            duration: 166,
-            poster: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80',
-            genre: 'Khoa Học Viễn Tưởng / Hành Động',
-            releaseDate: new Date('2024-03-01')
-        });
-
-        const movie3 = new Movie({
-            title: 'Kung Fu Panda 4',
-            description: 'Chú gấu Po phải tìm kiếm và huấn luyện một chiến binh Rồng mới trong khi đối đầu với mụ phù thủy biến hình Chameleonic đầy mưu mẹo.',
-            duration: 94,
-            poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&q=80',
-            genre: 'Hoạt Hình / Hài Hước',
-            releaseDate: new Date('2024-03-08')
-        });
-
-        const movie4 = new Movie({
-            title: 'Godzilla x Kong: Đế Chế Mới',
-            description: 'Hai siêu quái vật huyền thoại Godzilla và Kong hợp lực chống lại một hiểm họa cổ đại tiềm ẩn sâu bên trong Trái Đất.',
-            duration: 115,
-            poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80',
-            genre: 'Hành Động / Viễn Tưởng',
-            releaseDate: new Date('2024-03-29')
-        });
-
-        await movie1.save();
-        await movie2.save();
-        await movie3.save();
-        await movie4.save();
-        console.log('Đã khởi tạo danh sách Phim!');
+        const savedMovies = [];
+        for (const item of moviesList) {
+            const m = new Movie(item);
+            const savedM = await m.save();
+            savedMovies.push(savedM);
+        }
+        console.log(`Đã khởi tạo thành công ${savedMovies.length} Bộ phim!`);
 
         // 5. Seed Rooms
         const generateSeatLayout = () => {
@@ -176,28 +241,32 @@ const seedData = async () => {
 
         const room1 = new Room({
             name: 'Phòng chiếu 01 (2D Standard)',
+            type: '2D Standard',
             totalSeats: 80,
             seatLayout: generateSeatLayout()
         });
 
         const room2 = new Room({
             name: 'Phòng chiếu 02 (IMAX 3D)',
+            type: 'IMAX 3D',
             totalSeats: 80,
             seatLayout: generateSeatLayout()
         });
 
         const room3 = new Room({
             name: 'Phòng chiếu VIP 03',
+            type: 'Phòng VIP',
             totalSeats: 80,
             seatLayout: generateSeatLayout()
         });
 
-        await room1.save();
-        await room2.save();
-        await room3.save();
+        const savedRoom1 = await room1.save();
+        const savedRoom2 = await room2.save();
+        const savedRoom3 = await room3.save();
+        const rooms = [savedRoom1, savedRoom2, savedRoom3];
         console.log('Đã khởi tạo danh sách Phòng chiếu!');
 
-        // 6. Seed Showtimes
+        // 6. Seed Showtimes for all movies (Today and Future Days)
         const createDate = (daysFromNow, hours, minutes) => {
             const d = new Date();
             d.setDate(d.getDate() + daysFromNow);
@@ -205,57 +274,53 @@ const seedData = async () => {
             return d;
         };
 
-        const showtime1 = new Showtime({
-            movie: movie1._id,
-            room: room1._id,
-            startTime: createDate(0, 14, 30),
-            endTime: createDate(0, 16, 30),
-            ticketPrice: 85000
+        const showtimesToSave = [];
+        // Create active showtimes for today, tomorrow and next 3 days
+        const startHours = [10, 13, 16, 19, 21];
+
+        savedMovies.forEach((movie, mIdx) => {
+            const room = rooms[mIdx % rooms.length];
+            const hour = startHours[mIdx % startHours.length];
+            
+            // Showtime Today
+            showtimesToSave.push(new Showtime({
+                movie: movie._id,
+                room: room._id,
+                startTime: createDate(0, hour, 30),
+                endTime: createDate(0, hour + 2, 30),
+                ticketPrice: 85000 + (mIdx % 3) * 10000
+            }));
+
+            // Showtime Tomorrow
+            showtimesToSave.push(new Showtime({
+                movie: movie._id,
+                room: rooms[(mIdx + 1) % rooms.length]._id,
+                startTime: createDate(1, (hour + 2) % 23, 0),
+                endTime: createDate(1, ((hour + 4) % 23), 0),
+                ticketPrice: 90000 + (mIdx % 2) * 10000
+            }));
+
+            // Showtime Day After Tomorrow
+            showtimesToSave.push(new Showtime({
+                movie: movie._id,
+                room: rooms[(mIdx + 2) % rooms.length]._id,
+                startTime: createDate(2, hour, 15),
+                endTime: createDate(2, hour + 2, 15),
+                ticketPrice: 95000
+            }));
         });
 
-        const showtime2 = new Showtime({
-            movie: movie1._id,
-            room: room2._id,
-            startTime: createDate(0, 19, 0),
-            endTime: createDate(0, 21, 0),
-            ticketPrice: 110000
-        });
-
-        const showtime3 = new Showtime({
-            movie: movie2._id,
-            room: room2._id,
-            startTime: createDate(0, 20, 15),
-            endTime: createDate(0, 23, 0),
-            ticketPrice: 120000
-        });
-
-        const showtime4 = new Showtime({
-            movie: movie3._id,
-            room: room1._id,
-            startTime: createDate(1, 15, 0),
-            endTime: createDate(1, 16, 35),
-            ticketPrice: 80000
-        });
-
-        const showtime5 = new Showtime({
-            movie: movie4._id,
-            room: room3._id,
-            startTime: createDate(1, 18, 30),
-            endTime: createDate(1, 20, 25),
-            ticketPrice: 105000
-        });
-
-        await showtime1.save();
-        await showtime2.save();
-        await showtime3.save();
-        await showtime4.save();
-        await showtime5.save();
-        console.log('Đã khởi tạo Suất chiếu!');
+        let createdShowtimes = [];
+        for (const st of showtimesToSave) {
+            const savedSt = await st.save();
+            createdShowtimes.push(savedSt);
+        }
+        console.log(`Đã khởi tạo ${createdShowtimes.length} Suất chiếu cho tất cả các phim!`);
 
         // 7. Seed Bookings
         const booking1 = new Booking({
             user: customer1._id,
-            showtime: showtime1._id,
+            showtime: createdShowtimes[0]._id,
             seats: ['C5', 'C6'],
             totalPrice: 170000,
             status: 'confirmed',
@@ -264,7 +329,7 @@ const seedData = async () => {
 
         const booking2 = new Booking({
             user: customer2._id,
-            showtime: showtime2._id,
+            showtime: createdShowtimes[1]._id,
             seats: ['D3', 'D4', 'D5'],
             totalPrice: 330000,
             status: 'confirmed',
