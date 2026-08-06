@@ -137,6 +137,23 @@
   transform: scale(1.05);
 }
 
+.poster-container-link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.movie-title-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.movie-title-link:hover .movie-title {
+  color: #e50914;
+  transition: color 0.2s ease;
+}
+
 .movie-info {
   padding: 1.4rem;
   display: flex;

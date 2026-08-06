@@ -91,22 +91,26 @@ function HomePage() {
             <div className="movie-grid">
               {filteredMovies.map((movie) => (
                 <div className="movie-card" key={movie._id}>
-                  <div className="poster-container">
-                    <img 
-                      src={movie.poster || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'} 
-                      alt={movie.title} 
-                      className="movie-poster" 
-                    />
-                    <span className="duration-tag">{movie.duration} phút</span>
-                    <div className="poster-overlay">
-                      <Link to={`/movie/${movie._id}`} className="btn-overlay-book">
-                        MUA VÉ NGAY
-                      </Link>
+                  <Link to={`/movie/${movie._id}`} className="poster-container-link">
+                    <div className="poster-container">
+                      <img 
+                        src={movie.poster || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba'} 
+                        alt={movie.title} 
+                        className="movie-poster" 
+                      />
+                      <span className="duration-tag">{movie.duration} phút</span>
+                      <div className="poster-overlay">
+                        <span className="btn-overlay-book">
+                          MUA VÉ NGAY
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                   <div className="movie-info">
                     <span className="movie-genre">{movie.genre}</span>
-                    <h3 className="movie-title">{movie.title}</h3>
+                    <Link to={`/movie/${movie._id}`} className="movie-title-link">
+                      <h3 className="movie-title">{movie.title}</h3>
+                    </Link>
                     <p className="movie-desc">{movie.description}</p>
                     <div className="card-action-bar">
                       <Link to={`/movie/${movie._id}`} className="book-btn">
