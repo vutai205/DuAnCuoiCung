@@ -22,7 +22,7 @@ interface Food {
   category: string;
 }
 
-const API = "http://localhost:5001/api/foods";
+const API = "/api/foods";
 
 export default function FoodList() {
   const [foods, setFoods] = useState<Food[]>([]);

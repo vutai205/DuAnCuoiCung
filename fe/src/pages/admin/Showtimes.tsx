@@ -125,7 +125,7 @@ const Showtimes: React.FC = () => {
       title: 'Tên Phim',
       key: 'movie',
       render: (_: any, record: ShowtimeItem) => {
-        const title = typeof record.movie === 'object' ? record.movie.title : 'Chưa xác định';
+        const title = record.movie && typeof record.movie === 'object' ? record.movie.title : 'Chưa xác định';
         return <strong style={{ fontSize: '15px' }}>{title}</strong>;
       }
     },
@@ -133,7 +133,7 @@ const Showtimes: React.FC = () => {
       title: 'Phòng Chiếu',
       key: 'room',
       render: (_: any, record: ShowtimeItem) => {
-        const roomName = typeof record.room === 'object' ? record.room.name : 'Chưa xác định';
+        const roomName = record.room && typeof record.room === 'object' ? record.room.name : 'Chưa xác định';
         return <Tag color="blue">{roomName}</Tag>;
       }
     },

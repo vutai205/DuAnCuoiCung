@@ -48,6 +48,27 @@ const BookingPage: React.FC = () => {
     { id: 'c3', name: 'Combo Family (2 Bỏng + 2 Nước)', desc: '2 Bỏng ngô Caramel + 2 Nước lớn', price: 135000, count: 0 },
   ]);
 
+  useEffect(() => {
+    const fetchApiFoods = async () => {
+      try {
+        const res = await axios.get('/api/foods');
+        if (res.data && res.data.length > 0) {
+          const apiCombos = res.data.map((f: any) => ({
+            id: f._id,
+            name: f.name,
+            desc: `${f.category || 'Đồ ăn'} - Số lượng kho: ${f.quantity}`,
+            price: f.price,
+            count: 0
+          }));
+          setCombos(apiCombos);
+        }
+      } catch (err) {
+        console.error('Không thể lấy danh sách đồ ăn:', err);
+      }
+    };
+    fetchApiFoods();
+  }, []);
+
   // Payment state
   const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cash'>('vnpay');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
