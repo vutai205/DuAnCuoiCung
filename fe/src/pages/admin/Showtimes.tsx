@@ -26,7 +26,9 @@ const Showtimes: React.FC = () => {
   const fetchShowtimes = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/showtimes');
+      const token = getToken();
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const res = await axios.get('/api/showtimes', config);
       setShowtimes(res.data);
     } catch (err: any) {
       message.error('Không thể tải danh sách suất chiếu');

@@ -8,7 +8,7 @@ router.get('/:id/seats', getShowtimeSeats);
 
 // Admin routes
 router.route('/')
-    .get(protect, admin, getShowtimes)
+    .get(getShowtimes)
     .post(protect, admin, createShowtime);
 
 router.route('/:id')
