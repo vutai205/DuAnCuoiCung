@@ -104,7 +104,7 @@ exports.vnpayReturn = async (req, res) => {
                 paymentStatus: 'paid' 
             });
             // Đá khách hàng về Frontend trang Thành công
-            return res.redirect('http://localhost:3000/payment-success');
+            return res.redirect(`http://localhost:5173/payment-success?bookingId=${bookingId}`);
         } else {
             // Khách hủy thanh toán hoặc quẹt thẻ lỗi -> Cập nhật DB
             await Booking.findByIdAndUpdate(bookingId, { 
@@ -112,7 +112,7 @@ exports.vnpayReturn = async (req, res) => {
                 paymentStatus: 'failed' 
             });
             // Đá khách hàng về Frontend trang Thất bại
-            return res.redirect('http://localhost:3000/payment-failed');
+            return res.redirect(`http://localhost:5173/payment-failed?bookingId=${bookingId}`);
         }
     } else {
         // Có người cố tình sửa kết quả trên thanh URL (Hacker)

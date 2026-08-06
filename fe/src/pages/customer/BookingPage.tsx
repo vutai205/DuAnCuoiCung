@@ -170,7 +170,25 @@ const BookingPage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setCreatedBooking(res.data);
+      const booking = res.data;
+
+      if (paymentMethod === 'vnpay') {
+        // Gọi API tạo VNPay payment URL
+        const payRes = await axios.post('/api/payment/create_payment_url', {
+          bookingId: booking._id,
+          amount: grandTotal
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (payRes.data && payRes.data.paymentUrl) {
+          // Chuyển hướng khách tới cổng thanh toán VNPay
+          window.location.href = payRes.data.paymentUrl;
+          return;
+        }
+      }
+
+      setCreatedBooking(booking);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn đặt vé');
     } finally {

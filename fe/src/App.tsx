@@ -29,6 +29,8 @@ import MemberCard from "./app/pages/Profile/MemberCard";
 import BannerSlider from "./app/components/BannerSlider/BannerSlider";
 import MovieDetailPage from "./pages/customer/MovieDetailPage";
 import BookingPage from "./pages/customer/BookingPage";
+import PaymentSuccessPage from "./pages/customer/PaymentSuccessPage";
+import PaymentFailedPage from "./pages/customer/PaymentFailedPage";
 
 function HomePage() {
   const [movies, setMovies] = useState<any[]>([]);
@@ -139,6 +141,8 @@ function App() {
         <Route path="/booking/:showtimeId" element={<BookingPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/member-card" element={<MemberCard />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/payment-failed" element={<PaymentFailedPage />} />
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
