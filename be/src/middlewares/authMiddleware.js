@@ -15,14 +15,18 @@ const protect = async (req, res, next) => {
             // Tìm user dựa trên ID trong token và gán vào req.user (loại bỏ trường password)
             req.user = await User.findById(decoded.id).select('-password');
 
-            next(); // Cho phép đi tiếp vào Controller
+            if (!req.user) {
+                return res.status(401).json({ message: 'Tài khoản không tồn tại, vui lòng đăng nhập lại!' });
+            }
+
+            return next();
         } catch (error) {
-            res.status(401).json({ message: 'Không có quyền truy cập, token không hợp lệ!' });
+            return res.status(401).json({ message: 'Không có quyền truy cập, token không hợp lệ!' });
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: 'Không có quyền truy cập, không tìm thấy token!' });
+        return res.status(401).json({ message: 'Không có quyền truy cập, không tìm thấy token!' });
     }
 };
 
