@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const roomSchema = new mongoose.Schema({
     name: { type: String, required: true },
+    type: { type: String, default: '2D Standard' },
     totalSeats: { type: Number, required: true },
     seatLayout: [{
         seatName: { type: String, required: true },

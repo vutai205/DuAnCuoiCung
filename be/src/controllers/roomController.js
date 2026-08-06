@@ -60,6 +60,7 @@ exports.createRoom = async (req, res) => {
 
         const room = new Room({
             name,
+            type: req.body.type || '2D Standard',
             totalSeats,
             seatLayout
         });
@@ -80,6 +81,7 @@ exports.updateRoom = async (req, res) => {
 
         if (room) {
             room.name = req.body.name || room.name;
+            if (req.body.type) room.type = req.body.type;
             
             // Nếu thay đổi tổng số ghế, hệ thống nên sinh lại sơ đồ ghế
             if (req.body.totalSeats && req.body.totalSeats !== room.totalSeats) {

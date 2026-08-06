@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Table, Button, Modal, Form, Input, InputNumber, Popconfirm, message, Tag, Space, Card } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, Popconfirm, message, Tag, Space, Card } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { getToken } from '../../services/authApi';
 
 interface Room {
   _id: string;
   name: string;
+  type?: string;
   totalSeats: number;
   seatLayout?: { seatName: string; type: string }[];
   createdAt?: string;
@@ -38,7 +39,7 @@ const Rooms: React.FC = () => {
   const handleOpenAddModal = () => {
     setEditingRoom(null);
     form.resetFields();
-    form.setFieldsValue({ totalSeats: 80 });
+    form.setFieldsValue({ totalSeats: 80, type: '2D Standard' });
     setIsModalOpen(true);
   };
 
@@ -46,6 +47,7 @@ const Rooms: React.FC = () => {
     setEditingRoom(room);
     form.setFieldsValue({
       name: room.name,
+      type: room.type || '2D Standard',
       totalSeats: room.totalSeats
     });
     setIsModalOpen(true);
@@ -64,7 +66,7 @@ const Rooms: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (values: { name: string; totalSeats: number }) => {
+  const handleSubmit = async (values: { name: string; type: string; totalSeats: number }) => {
     try {
       const token = getToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -105,10 +107,11 @@ const Rooms: React.FC = () => {
       title: 'Định dạng rạp',
       key: 'format',
       render: (_: any, record: Room) => {
-        const nameUpper = record.name.toUpperCase();
-        if (nameUpper.includes('IMAX')) return <Tag color="purple">IMAX 3D</Tag>;
-        if (nameUpper.includes('VIP')) return <Tag color="gold">Phòng VIP</Tag>;
-        return <Tag color="green">2D Standard</Tag>;
+        const typeStr = record.type || (record.name.toUpperCase().includes('IMAX') ? 'IMAX 3D' : record.name.toUpperCase().includes('VIP') ? 'Phòng VIP' : '2D Standard');
+        if (typeStr.includes('IMAX')) return <Tag color="purple">IMAX 3D</Tag>;
+        if (typeStr.includes('VIP')) return <Tag color="gold">Phòng VIP</Tag>;
+        if (typeStr.includes('4DX')) return <Tag color="cyan">4DX</Tag>;
+        return <Tag color="green">{typeStr}</Tag>;
       }
     },
     {
@@ -174,6 +177,19 @@ const Rooms: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng nhập tên phòng chiếu!' }]}
           >
             <Input placeholder="VD: Phòng chiếu 01 (IMAX 3D)" />
+          </Form.Item>
+
+          <Form.Item
+            name="type"
+            label="Định Dạng / Loại Phòng Chiếu"
+            rules={[{ required: true, message: 'Vui lòng chọn loại phòng chiếu!' }]}
+          >
+            <Select placeholder="Chọn định dạng rạp">
+              <Select.Option value="2D Standard">2D Standard (Phòng Tiêu Chuẩn)</Select.Option>
+              <Select.Option value="Phòng VIP">Phòng VIP (Ghế Da Cao Cấp)</Select.Option>
+              <Select.Option value="IMAX 3D">IMAX 3D (Màn Hình Cực Đại)</Select.Option>
+              <Select.Option value="4DX">4DX (Hiệu Ứng Rung Lắc / Gió / Nước)</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
