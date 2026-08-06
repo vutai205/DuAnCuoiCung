@@ -903,3 +903,16 @@
 [2026-08-06T02:13:25.083Z] GET /api/rooms 304 - 133ms
 [2026-08-06T02:13:25.219Z] GET /api/rooms 304 - 36ms
 [2026-08-06T02:14:24.666Z] GET /api/rooms 200 - 68ms
+[2026-08-06T02:15:06.911Z] GET /api/rooms 304 - 62ms
+[2026-08-06T02:15:28.710Z] GET /api/rooms 304 - 78ms
+[2026-08-06T02:15:28.790Z] GET /api/rooms 304 - 106ms
+[2026-08-06T02:15:36.480Z] PUT /api/rooms/6a73ed23c896d1f26bb0bb20 200 - 133ms
+[2026-08-06T02:15:36.620Z] GET /api/rooms 200 - 147ms
+[2026-08-06T02:15:38.859Z] GET /api/movies 304 - 26ms
+[2026-08-06T02:15:38.859Z] GET /api/rooms 304 - 60ms
+[2026-08-06T02:15:38.855Z] GET /api/showtimes 200 - 93ms
+[2026-08-06T02:15:38.924Z] GET /api/rooms 304 - 69ms
+[2026-08-06T02:15:38.951Z] GET /api/showtimes 304 - 60ms
+[2026-08-06T02:15:38.890Z] GET /api/movies 304 - 265ms
+[2026-08-06T02:15:39.672Z] GET /api/users 304 - 59ms
+[2026-08-06T02:15:39.734Z] GET /api/users 304 - 56ms
