@@ -9,7 +9,7 @@ function sortObject(obj) {
     let str = [];
     let key;
     for (key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
             str.push(encodeURIComponent(key));
         }
     }
@@ -60,7 +60,7 @@ exports.createPaymentUrl = async (req, res) => {
         // 2. Mã hóa dữ liệu (Tạo chữ ký điện tử chống giả mạo)
         let signData = qs.stringify(vnp_Params, { encode: false });
         let hmac = crypto.createHmac("sha512", secretKey);
-        let signed = hmac.update(new Buffer.from(signData, 'utf-8')).digest("hex"); 
+        let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex"); 
         vnp_Params['vnp_SecureHash'] = signed;
 
         // 3. Nối tham số vào URL
@@ -90,7 +90,7 @@ exports.vnpayReturn = async (req, res) => {
     
     // Tạo lại chữ ký
     let hmac = crypto.createHmac("sha512", secretKey);
-    let signed = hmac.update(new Buffer.from(signData, 'utf-8')).digest("hex");
+    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
     // So sánh chữ ký VNPay gửi về với chữ ký mình tự tạo
     if (secureHash === signed) {
