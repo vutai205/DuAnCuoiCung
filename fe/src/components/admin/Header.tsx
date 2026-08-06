@@ -4,8 +4,8 @@ const Header = () => {
   return (
     <header className="admin-header">
       <div>
-        <h2>Admin Dashboard</h2>
-        <p>Welcome back 👋</p>
+        <h2>Bảng Điều Khiển Quản Trị</h2>
+        <p>Chào mừng bạn quay trở lại 👋</p>
       </div>
 
       <div className="header-right">
@@ -14,8 +14,8 @@ const Header = () => {
         <div className="admin-user">
           <FaUserCircle size={35} />
           <div>
-            <strong>Admin</strong>
-            <p>Administrator</p>
+            <strong>Quản Trị Viên</strong>
+            <p>Quản lý hệ thống</p>
           </div>
         </div>
       </div>

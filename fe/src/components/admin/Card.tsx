@@ -1,11 +1,11 @@
 interface Props {
     title: string;
-    total: number;
+    total: number | string;
     color: string;
 }
 
 const Card = ({ title, total, color }: Props) => {
-    const formattedTotal = title === "Revenue"
+    const formattedTotal = (title === "Tổng Doanh Thu" || title === "Revenue") && typeof total === "number"
         ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(total)
         : total;
 

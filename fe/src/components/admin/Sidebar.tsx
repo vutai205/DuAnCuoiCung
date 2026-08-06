@@ -14,47 +14,47 @@ import {
 const Sidebar = () => {
   const menus = [
     {
-      title: "Dashboard",
+      title: "Tổng Quan",
       icon: <FaChartBar />,
       path: "/admin"
     },
     {
-      title: "Movies",
+      title: "Quản Lý Phim",
       icon: <FaFilm />,
       path: "/admin/movies"
     },
     {
-      title: "Banner",
+      title: "Banner Quảng Cáo",
       icon: <FaImages />,
       path: "/admin/banner"
     },
     {
-      title: "Rooms",
+      title: "Phòng Chiếu",
       icon: <FaDoorOpen />,
       path: "/admin/rooms"
     },
     {
-      title: "Showtimes",
+      title: "Suất Chiếu",
       icon: <FaClock />,
       path: "/admin/showtimes"
     },
     {
-      title: "Users",
+      title: "Tài Khoản Hệ Thống",
       icon: <FaUsers />,
       path: "/admin/users"
     },
     {
-      title: "Bookings",
+      title: "Quản Lý Đơn Vé",
       icon: <FaTicketAlt />,
       path: "/admin/bookings"
     },
     {
-      title: "Foods",
+      title: "Đồ Ăn & Nước Uống",
       icon: <FaUtensils />,
       path: "/admin/foods"
     },
     {
-      title: "Customers",
+      title: "Danh Sách Khách Hàng",
       icon: <FaUserFriends />,
       path: "/admin/customers"
     }
@@ -63,7 +63,7 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <div className="logo">
-        🎬 Admin Panel
+        🎬 Quản Trị Hệ Thống
       </div>
 
       <ul>
@@ -76,7 +76,6 @@ const Sidebar = () => {
               }
             >
               <span>{item.icon}</span>
-
               <span>{item.title}</span>
             </NavLink>
           </li>
