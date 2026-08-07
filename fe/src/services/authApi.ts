@@ -2,6 +2,7 @@ import axios from 'axios';
 import type {
   AuthUser,
   ForgotPasswordPayload,
+  ResetPasswordPayload,
   LoginPayload,
   RegisterPayload,
 } from '../types/auth';
@@ -25,6 +26,13 @@ export const forgotPassword = async (
   payload: ForgotPasswordPayload
 ): Promise<{ message: string }> => {
   const { data } = await api.post<{ message: string }>('/forgot-password', payload);
+  return data;
+};
+
+export const resetPassword = async (
+  payload: ResetPasswordPayload
+): Promise<{ message: string }> => {
+  const { data } = await api.post<{ message: string }>('/reset-password', payload);
   return data;
 };
 

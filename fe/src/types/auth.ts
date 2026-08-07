@@ -20,3 +20,9 @@ export interface RegisterPayload {
 export interface ForgotPasswordPayload {
   email: string;
 }
+
+export interface ResetPasswordPayload {
+  email: string;
+  otp: string;
+  newPassword: string;
+}
