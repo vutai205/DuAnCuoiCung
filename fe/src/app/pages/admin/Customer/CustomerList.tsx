@@ -38,7 +38,7 @@ export default function CustomerList() {
       const token = getToken();
       const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
       const res = await axios.get("/api/users", config);
-      // Lọc ra các tài khoản có vai trò là khách hàng (user)
+      // Lọc ra các tài khoản khách hàng thực sự (role === 'user')
       const userList = res.data.filter((u: any) => u.role === "user" || !u.role);
       setCustomers(userList);
     } catch (err: any) {
@@ -53,24 +53,20 @@ export default function CustomerList() {
   }, []);
 
   const handleSubmit = async (values: any) => {
+    if (!editing) return;
     try {
       const token = getToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      if (editing) {
-        await axios.put(`/api/users/${editing._id}`, { ...values, role: "user" }, config);
-        message.success("Cập nhật thông tin khách hàng thành công");
-      } else {
-        await axios.post("/api/users", { ...values, role: "user" }, config);
-        message.success("Thêm khách hàng thành công");
-      }
+      await axios.put(`/api/users/${editing._id}`, { ...values, role: "user" }, config);
+      message.success("Cập nhật thông tin khách hàng thành công");
 
       setOpen(false);
       form.resetFields();
       setEditing(null);
       fetchCustomers();
     } catch (err: any) {
-      message.error(err.response?.data?.message || "Có lỗi xảy ra");
+      message.error(err.response?.data?.message || "Có lỗi xảy ra khi cập nhật");
     }
   };
 
@@ -106,7 +102,7 @@ export default function CustomerList() {
       render: (text: string) => <strong>{text}</strong>,
     },
     {
-      title: "Email",
+      title: "Email khách hàng",
       dataIndex: "email",
       key: "email",
     },
@@ -153,7 +149,7 @@ export default function CustomerList() {
           </Button>
 
           <Popconfirm
-            title="Bạn có chắc chắn muốn xóa khách hàng này?"
+            title="Bạn có chắc chắn muốn xóa tài khoản khách hàng này?"
             onConfirm={() => handleDelete(record._id)}
             okText="Xóa"
             cancelText="Hủy"
@@ -172,21 +168,7 @@ export default function CustomerList() {
   );
 
   return (
-    <Card
-      title="👤 Quản Lý Danh Sách Khách Hàng (Tài Khoản Đã Đăng Ký)"
-      extra={
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditing(null);
-            form.resetFields();
-            setOpen(true);
-          }}
-        >
-          + Thêm khách hàng mới
-        </Button>
-      }
-    >
+    <Card title="👤 Quản Lý Danh Sách Khách Hàng (Đăng Ký Online)">
       <Input
         placeholder="Tìm kiếm theo tên hoặc email khách hàng..."
         style={{ marginBottom: 20 }}
@@ -203,18 +185,21 @@ export default function CustomerList() {
       />
 
       <Modal
-        title={editing ? "Cập nhật thông tin khách hàng" : "Thêm khách hàng mới"}
+        title="✏️ Cập nhật thông tin khách hàng"
         open={open}
         footer={null}
-        onCancel={() => setOpen(false)}
+        onCancel={() => {
+          setOpen(false);
+          setEditing(null);
+        }}
       >
-        <Form layout="vertical" form={form} onFinish={handleSubmit}>
+        <Form layout="vertical" form={form} onFinish={handleSubmit} autoComplete="off">
           <Form.Item
             label="Họ tên"
             name="name"
             rules={[{ required: true, message: "Vui lòng nhập họ tên!" }]}
           >
-            <Input placeholder="Nguyễn Văn A" />
+            <Input autoComplete="off" />
           </Form.Item>
 
           <Form.Item
@@ -222,21 +207,11 @@ export default function CustomerList() {
             name="email"
             rules={[{ required: true, message: "Vui lòng nhập email!" }]}
           >
-            <Input placeholder="khachhang@gmail.com" />
+            <Input autoComplete="off" />
           </Form.Item>
 
-          {!editing && (
-            <Form.Item
-              label="Mật khẩu ban đầu"
-              name="password"
-              rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
-            >
-              <Input.Password placeholder="Nhập mật khẩu ban đầu" />
-            </Form.Item>
-          )}
-
           <Button htmlType="submit" block type="primary" style={{ marginTop: 10 }}>
-            {editing ? "Cập Nhật" : "Tạo Mới"}
+            Lưu Cập Nhật
           </Button>
         </Form>
       </Modal>

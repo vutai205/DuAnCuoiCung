@@ -7,8 +7,7 @@ import {
   FaImages,
   FaChartBar,
   FaClock,
-  FaUtensils,
-  FaUserFriends
+  FaUtensils
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -39,11 +38,6 @@ const Sidebar = () => {
       path: "/admin/showtimes"
     },
     {
-      title: "Tài Khoản Hệ Thống",
-      icon: <FaUsers />,
-      path: "/admin/users"
-    },
-    {
       title: "Quản Lý Đơn Vé",
       icon: <FaTicketAlt />,
       path: "/admin/bookings"
@@ -54,16 +48,16 @@ const Sidebar = () => {
       path: "/admin/foods"
     },
     {
-      title: "Danh Sách Khách Hàng",
-      icon: <FaUserFriends />,
-      path: "/admin/customers"
+      title: "Quản Lý Tài Khoản & Khách Hàng",
+      icon: <FaUsers />,
+      path: "/admin/users"
     }
   ];
 
   return (
     <aside className="sidebar">
       <div className="logo">
-        🎬 Quản Trị Hệ Thống
+        🎬 Quản Trị VENRI CINEMA
       </div>
 
       <ul>
