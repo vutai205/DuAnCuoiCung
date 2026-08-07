@@ -3,6 +3,9 @@ export interface AuthUser {
   name: string;
   email: string;
   role: 'user' | 'admin';
+  phone?: string;
+  gender?: string;
+  address?: string;
   token: string;
 }
 

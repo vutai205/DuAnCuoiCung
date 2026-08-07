@@ -1337,3 +1337,7 @@
 [2026-08-07T01:33:04.384Z] GET /api/bookings/my-bookings 304 - 121ms
 [2026-08-07T01:34:47.508Z] PUT /api/users/profile 200 - 104ms
 [2026-08-07T01:37:08.710Z] PUT /api/users/profile 200 - 325ms
+[2026-08-07T01:38:33.889Z] GET /api/banners 304 - 111ms
+[2026-08-07T01:38:33.894Z] GET /api/movies 304 - 110ms
+[2026-08-07T01:38:34.005Z] GET /api/banners 304 - 32ms
+[2026-08-07T01:38:34.006Z] GET /api/movies 304 - 32ms

@@ -28,6 +28,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    phone: {
+        type: String,
+        default: ""
+    },
+    gender: {
+        type: String,
+        default: "Nam"
+    },
+    address: {
+        type: String,
+        default: ""
+    },
     resetPasswordOtp: String,
     resetPasswordOtpExpire: Date
 }, { timestamps: true });

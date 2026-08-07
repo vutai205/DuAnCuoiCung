@@ -15,8 +15,8 @@ export default function MemberCard() {
   const cardNumber = user?._id ? `M${user._id.slice(-8).toUpperCase()}` : "M00000000";
   const fullName = user?.name || "Khách Hàng";
   const email = user?.email || "N/A";
-  const gender = "Nam";
-  const address = "Hà Nội";
+  const gender = user?.gender || "Chưa cập nhật";
+  const address = user?.address || "Chưa cập nhật";
   const status = user ? "Đang hoạt động" : "Chưa kích hoạt";
   const activeDate = "25/08/2025";
 
@@ -27,8 +27,8 @@ export default function MemberCard() {
           <div className="row" style={{ gridTemplateColumns: "350px 1fr", gap: 40 }}>
             <div>
               <div className="cinema-card">
-                <div className="card-logo">
-                  <img src="https://chieuphimquocgia.com.vn/_next/static/media/logo.9f3e8e6f.png" alt="logo" style={{ maxHeight: '40px' }} />
+                <div className="card-logo" style={{ color: "#fff", fontWeight: "bold", fontSize: "20px" }}>
+                  🎬 VENRI CINEMA
                 </div>
 
                 <div className="card-qr">
@@ -90,8 +90,8 @@ export default function MemberCard() {
               </div>
 
               <div className="member-alert">
-                <h4>Thông tin đăng ký thẻ thành viên U22 của bạn đang chờ phê duyệt.</h4>
-                <p>Vui lòng đến Trung tâm Chiếu phim Quốc gia để hoàn tất thủ tục.</p>
+                <h4>Thông tin đăng ký thẻ thành viên U22 của bạn đang hoạt động.</h4>
+                <p>Vui lòng xuất trình mã QR thẻ tại quầy vé VENRI CINEMA khi nhận ưu đãi.</p>
               </div>
             </div>
           </div>

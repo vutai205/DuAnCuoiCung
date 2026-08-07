@@ -11,6 +11,9 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState("profile");
   const [user, setUser] = useState<any>(null);
   const [name, setName] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
+  const [gender, setGender] = useState<string>("Nam");
+  const [address, setAddress] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
   const [passwordForm] = Form.useForm();
@@ -20,10 +23,13 @@ export default function Profile() {
     if (currentUser) {
       setUser(currentUser);
       setName(currentUser.name || "");
+      setPhone(currentUser.phone || "");
+      setGender(currentUser.gender || "Nam");
+      setAddress(currentUser.address || "");
     }
   }, []);
 
-  // Update profile name
+  // Save profile changes (Name, Phone, Gender, Address)
   const handleSaveProfile = async () => {
     if (!name.trim()) {
       message.warning("Họ & Tên không được để trống!");
@@ -34,10 +40,25 @@ export default function Profile() {
       const token = getToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      const res = await axios.put("/api/users/profile", { name: name.trim() }, config);
+      const res = await axios.put(
+        "/api/users/profile",
+        {
+          name: name.trim(),
+          phone: phone.trim(),
+          gender: gender,
+          address: address.trim(),
+        },
+        config
+      );
 
-      // Merge and save updated user back to localStorage
-      const updatedUser = { ...user, name: res.data.name };
+      // Save updated user to localStorage and update state
+      const updatedUser = {
+        ...user,
+        name: res.data.name,
+        phone: res.data.phone,
+        gender: res.data.gender,
+        address: res.data.address,
+      };
       saveAuthUser(updatedUser);
       setUser(updatedUser);
 
@@ -134,6 +155,51 @@ export default function Profile() {
               </div>
 
               <div className="form-group">
+                <label>Số điện thoại</label>
+                <input
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Nhập số điện thoại liên hệ..."
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="form-group">
+                <label>Giới tính</label>
+                <select
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "16px 18px",
+                    background: "#020617",
+                    border: "1px solid #334155",
+                    borderRadius: "14px",
+                    color: "white",
+                    fontSize: "15px",
+                  }}
+                >
+                  <option value="Nam" style={{ background: "#020617" }}>Nam</option>
+                  <option value="Nữ" style={{ background: "#020617" }}>Nữ</option>
+                  <option value="Khác" style={{ background: "#020617" }}>Khác</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Địa chỉ liên hệ</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Nhập địa chỉ của bạn..."
+                />
+              </div>
+            </div>
+
+            <div className="row">
+              <div className="form-group">
                 <label>Email (Không thể thay đổi)</label>
                 <input
                   type="email"
@@ -142,9 +208,7 @@ export default function Profile() {
                   style={{ opacity: 0.7, cursor: "not-allowed" }}
                 />
               </div>
-            </div>
 
-            <div className="row">
               <div className="form-group">
                 <label>Vai trò</label>
                 <input
@@ -154,7 +218,9 @@ export default function Profile() {
                   style={{ opacity: 0.7, cursor: "not-allowed" }}
                 />
               </div>
+            </div>
 
+            <div className="row">
               <div className="form-group">
                 <label>Mã tài khoản</label>
                 <input
