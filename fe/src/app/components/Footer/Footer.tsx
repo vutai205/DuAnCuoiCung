@@ -24,24 +24,24 @@ export default function Footer() {
 
       <div className="footer-content">
 
-        <p>
-          Cơ quan chủ quản: BỘ VĂN HÓA, THỂ THAO VÀ DU LỊCH
+        <p style={{ fontWeight: "bold", fontSize: "1.05rem", color: "#e50914" }}>
+          VENRI CINEMA — Hệ Thống Rạp Chiếu Phim Đẳng Cấp
         </p>
 
         <p>
-          Bản quyền thuộc Trung tâm Chiếu phim Quốc gia
+          Bản quyền thuộc Cụm Rạp VENRI CINEMA
         </p>
 
         <p>
-          Địa chỉ: 87 Láng Hạ, Ba Đình, Hà Nội
+          Địa chỉ: Số 87 Láng Hạ, Đống Đa, Hà Nội
         </p>
 
         <p>
-          Điện thoại: 024.35141791
+          Hotline CSKH: 1900 6868 - Email hỗ trợ: support@venricinema.com
         </p>
 
         <p>
-          Copyright © 2026 Trung tâm Chiếu phim Quốc gia
+          Copyright © 2026 VENRI CINEMA. All rights reserved.
         </p>
 
       </div>

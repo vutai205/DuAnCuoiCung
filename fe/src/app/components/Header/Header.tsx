@@ -67,13 +67,13 @@ export default function Header() {
     <header className="header">
       <div className="header-container">
 
-        {/* Brand Logo */}
+        {/* Brand Logo VENRI CINEMA */}
         <div className="logo" style={{ cursor: "pointer" }} onClick={() => handleNavClick("home")}>
           <div className="brand-logo-badge">
             <span className="logo-icon">🎬</span>
             <div className="logo-text">
-              <span className="logo-title">NCC CINEMA</span>
-              <span className="logo-sub">Trung Tâm Chiếu Phim Quốc Gia</span>
+              <span className="logo-title">VENRI CINEMA</span>
+              <span className="logo-sub">Hệ Thống Rạp Chiếu Phim Đẳng Cấp</span>
             </div>
           </div>
         </div>
@@ -139,14 +139,14 @@ export default function Header() {
 
       {/* Modal Bảng Giá Vé */}
       <Modal
-        title="🎟️ BẢNG GIÁ VÉ NIÊM YẾT - NCC CINEMA"
+        title="🎟️ BẢNG GIÁ VÉ NIÊM YẾT - VENRI CINEMA"
         open={activeModal === "price"}
         onCancel={() => setActiveModal(null)}
         footer={null}
         width={650}
       >
         <p style={{ color: "#64748b", marginBottom: 15 }}>
-          Áp dụng cho tất cả các phòng chiếu tiêu chuẩn và phòng VIP tại Trung tâm chiếu phim Quốc gia.
+          Áp dụng cho tất cả các phòng chiếu tiêu chuẩn, phòng VIP và IMAX 3D tại hệ thống cụm rạp Venri Cinema.
         </p>
         <Table columns={priceColumns} dataSource={priceData} pagination={false} size="middle" />
         <div style={{ marginTop: 15, fontSize: "0.85rem", color: "#64748b" }}>
@@ -156,7 +156,7 @@ export default function Header() {
 
       {/* Modal Tin Tức & Khuyến Mãi */}
       <Modal
-        title={activeModal === "promotions" ? "🎁 ƯU ĐÃI & KHUYẾN MÃI" : "📰 TIN TỨC ĐIỆN ẢNH"}
+        title={activeModal === "promotions" ? "🎁 ƯU ĐÃI & KHUYẾN MÃI - VENRI CINEMA" : "📰 TIN TỨC ĐIỆN ẢNH - VENRI CINEMA"}
         open={activeModal === "news" || activeModal === "promotions"}
         onCancel={() => setActiveModal(null)}
         footer={null}
@@ -164,7 +164,7 @@ export default function Header() {
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
           <div style={{ border: "1px solid #e2e8f0", padding: 15, borderRadius: 8 }}>
-            <Tag color="red">HOT</Tag> <strong>Thứ Ba Vui Vẻ - Đồng giá 50k toàn quốc</strong>
+            <Tag color="red">HOT</Tag> <strong>Thứ Ba Vui Vẻ - Đồng giá 50k toàn hệ thống Venri Cinema</strong>
             <p style={{ margin: "5px 0 0", color: "#475569", fontSize: "0.9rem" }}>
               Tất cả các suất chiếu vào ngày Thứ 3 hàng tuần chỉ từ 50.000đ cho mọi loại ghế thường và VIP.
             </p>
@@ -172,11 +172,11 @@ export default function Header() {
           <div style={{ border: "1px solid #e2e8f0", padding: 15, borderRadius: 8 }}>
             <Tag color="gold">VNPAY</Tag> <strong>Giảm 20k khi thanh toán quét mã VNPAY-QR</strong>
             <p style={{ margin: "5px 0 0", color: "#475569", fontSize: "0.9rem" }}>
-              Nhập mã NCC20K khi thanh toán đơn hàng đặt vé từ 100.000đ qua cổng VNPay Sandbox.
+              Nhập mã VENRI20K khi thanh toán đơn hàng đặt vé từ 100.000đ qua cổng VNPay Sandbox.
             </p>
           </div>
           <div style={{ border: "1px solid #e2e8f0", padding: 15, borderRadius: 8 }}>
-            <Tag color="blue">COMBO</Tag> <strong>Ưu đãi Combo Bỏng Nước Thành Viên</strong>
+            <Tag color="blue">COMBO</Tag> <strong>Ưu đãi Combo Bỏng Nước Thành Viên Venri Member</strong>
             <p style={{ margin: "5px 0 0", color: "#475569", fontSize: "0.9rem" }}>
               Giảm ngay 15% khi mua kèm Bỏng ngô Phô mai / Caramel khi đặt vé trực tuyến.
             </p>
@@ -186,19 +186,19 @@ export default function Header() {
 
       {/* Modal Giới Thiệu */}
       <Modal
-        title="🏛️ GIỚI THIỆU TRUNG TÂM CHIẾU PHIM QUỐC GIA (NCC CINEMA)"
+        title="🎬 GIỚI THIỆU HỆ THỐNG RẠP VENRI CINEMA"
         open={activeModal === "about"}
         onCancel={() => setActiveModal(null)}
         footer={null}
         width={650}
       >
         <p style={{ lineHeight: 1.6, color: "#334155" }}>
-          <strong>Trung tâm Chiếu phim Quốc gia (NCC)</strong> là đơn vị sự nghiệp thuộc Bộ Văn hóa, Thể thao và Du lịch, có chức năng tổ chức chiếu phim phục vụ các nhiệm vụ chính trị, xã hội, hợp tác quốc tế; trưng bày điện ảnh; tổ chức các hoạt động dịch vụ chiếu phim.
+          <strong>VENRI CINEMA</strong> là hệ thống cụm rạp chiếu phim hiện đại đạt chuẩn quốc tế hàng đầu, mang tới cho khán giả trải nghiệm điện ảnh chân thực và sống động vượt trội.
         </p>
         <ul style={{ paddingLeft: 20, color: "#475569", lineHeight: 1.8 }}>
-          <li>Trang thiết bị chiếu phim hiện đại 2D, 3D, IMAX và âm thanh Dolby Atmos tiêu chuẩn quốc tế.</li>
-          <li>Địa chỉ: Số 87 Láng Hạ, Đống Đa, Hà Nội.</li>
-          <li>Hotline hỗ trợ khách hàng: (024) 35141791</li>
+          <li>Trang thiết bị chiếu phim hiện đại 2D, 3D, IMAX và âm thanh vòm Dolby Atmos đỉnh cao.</li>
+          <li>Ghế da êm ái, khoảng cách giữa các hàng ghế rộng rãi chuẩn Châu Âu.</li>
+          <li>Dịch vụ chăm sóc khách hàng và đặt vé online siêu nhanh chóng qua cổng VNPay Sandbox.</li>
         </ul>
       </Modal>
 
