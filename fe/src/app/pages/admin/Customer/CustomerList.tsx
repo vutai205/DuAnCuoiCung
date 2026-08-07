@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import {
   Button,
   Card,
@@ -11,108 +12,133 @@ import {
   Popconfirm,
   message,
 } from "antd";
+import { getToken } from "../../../../services/authApi";
 
 interface Customer {
-  id: number;
-  fullName: string;
+  _id: string;
+  name: string;
   email: string;
-  phone: string;
-  rank: string;
-  status: string;
+  role: string;
+  status: boolean;
+  createdAt?: string;
 }
 
-const initialData: Customer[] = [
-  {
-    id: 1,
-    fullName: "Nguyễn Văn A",
-    email: "vana@gmail.com",
-    phone: "0988888888",
-    rank: "Gold",
-    status: "Hoạt động",
-  },
-  {
-    id: 2,
-    fullName: "Trần Thị B",
-    email: "tranb@gmail.com",
-    phone: "0912345678",
-    rank: "Silver",
-    status: "Khóa",
-  },
-];
-
 export default function CustomerList() {
-  const [customers, setCustomers] = useState(initialData);
-  const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>("");
+  const [open, setOpen] = useState<boolean>(false);
   const [editing, setEditing] = useState<Customer | null>(null);
 
   const [form] = Form.useForm();
 
-  const handleSubmit = (values: any) => {
-    if (editing) {
-      setCustomers((prev) =>
-        prev.map((item) =>
-          item.id === editing.id ? { ...editing, ...values } : item
-        )
-      );
-      message.success("Cập nhật thành công");
-    } else {
-      setCustomers([
-        ...customers,
-        {
-          id: Date.now(),
-          ...values,
-        },
-      ]);
-      message.success("Thêm thành công");
+  const fetchCustomers = async () => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const res = await axios.get("/api/users", config);
+      // Lọc ra các tài khoản có vai trò là khách hàng (user)
+      const userList = res.data.filter((u: any) => u.role === "user" || !u.role);
+      setCustomers(userList);
+    } catch (err: any) {
+      message.error("Không thể tải danh sách khách hàng từ CSDL");
+    } finally {
+      setLoading(false);
     }
-
-    setOpen(false);
-    form.resetFields();
-    setEditing(null);
   };
 
-  const handleDelete = (id: number) => {
-    setCustomers(customers.filter((item) => item.id !== id));
-    message.success("Đã xóa");
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const handleSubmit = async (values: any) => {
+    try {
+      const token = getToken();
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      if (editing) {
+        await axios.put(`/api/users/${editing._id}`, { ...values, role: "user" }, config);
+        message.success("Cập nhật thông tin khách hàng thành công");
+      } else {
+        await axios.post("/api/users", { ...values, role: "user" }, config);
+        message.success("Thêm khách hàng thành công");
+      }
+
+      setOpen(false);
+      form.resetFields();
+      setEditing(null);
+      fetchCustomers();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || "Có lỗi xảy ra");
+    }
+  };
+
+  const handleToggleStatus = async (id: string) => {
+    try {
+      const token = getToken();
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.put(`/api/users/status/${id}`, {}, config);
+      message.success("Đã thay đổi trạng thái tài khoản thành công");
+      fetchCustomers();
+    } catch (err: any) {
+      message.error("Lỗi thay đổi trạng thái");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const token = getToken();
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.delete(`/api/users/${id}`, config);
+      message.success("Đã xóa khách hàng thành công");
+      fetchCustomers();
+    } catch (err: any) {
+      message.error("Lỗi khi xóa khách hàng");
+    }
   };
 
   const columns = [
     {
-      title: "Họ tên",
-      dataIndex: "fullName",
+      title: "Họ và tên",
+      dataIndex: "name",
+      key: "name",
+      render: (text: string) => <strong>{text}</strong>,
     },
     {
       title: "Email",
       dataIndex: "email",
+      key: "email",
     },
     {
-      title: "SĐT",
-      dataIndex: "phone",
-    },
-    {
-      title: "Hạng",
-      dataIndex: "rank",
-      render: (rank: string) => <Tag color="gold">{rank}</Tag>,
+      title: "Hạng Thành Viên",
+      key: "rank",
+      render: () => <Tag color="gold">THÀNH VIÊN SILVER</Tag>,
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
-      render: (status: string) => (
-        <Tag color={status === "Hoạt động" ? "green" : "red"}>
-          {status}
+      key: "status",
+      render: (status: boolean) => (
+        <Tag color={status !== false ? "green" : "red"}>
+          {status !== false ? "Hoạt động" : "Bị khóa"}
         </Tag>
       ),
     },
     {
       title: "Thao tác",
+      key: "actions",
       render: (_: any, record: Customer) => (
         <Space>
           <Button
             type="primary"
+            size="small"
             onClick={() => {
               setEditing(record);
-              form.setFieldsValue(record);
+              form.setFieldsValue({
+                name: record.name,
+                email: record.email,
+              });
               setOpen(true);
             }}
           >
@@ -120,43 +146,34 @@ export default function CustomerList() {
           </Button>
 
           <Button
-            onClick={() => {
-              setCustomers((prev) =>
-                prev.map((item) =>
-                  item.id === record.id
-                    ? {
-                        ...item,
-                        status:
-                          item.status === "Hoạt động"
-                            ? "Khóa"
-                            : "Hoạt động",
-                      }
-                    : item
-                )
-              );
-            }}
+            size="small"
+            onClick={() => handleToggleStatus(record._id)}
           >
-            {record.status === "Hoạt động" ? "Khóa" : "Mở"}
+            {record.status !== false ? "Khóa" : "Mở"}
           </Button>
 
           <Popconfirm
-            title="Xóa khách hàng?"
-            onConfirm={() => handleDelete(record.id)}
+            title="Bạn có chắc chắn muốn xóa khách hàng này?"
+            onConfirm={() => handleDelete(record._id)}
+            okText="Xóa"
+            cancelText="Hủy"
           >
-            <Button danger>Xóa</Button>
+            <Button danger size="small">Xóa</Button>
           </Popconfirm>
         </Space>
       ),
     },
   ];
 
-  const filtered = customers.filter((item) =>
-    item.fullName.toLowerCase().includes(search.toLowerCase())
+  const filtered = customers.filter(
+    (item) =>
+      item.name?.toLowerCase().includes(search.toLowerCase()) ||
+      item.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <Card
-      title="Quản lý khách hàng"
+      title="👤 Quản Lý Danh Sách Khách Hàng (Tài Khoản Đã Đăng Ký)"
       extra={
         <Button
           type="primary"
@@ -166,76 +183,60 @@ export default function CustomerList() {
             setOpen(true);
           }}
         >
-          Thêm khách hàng
+          + Thêm khách hàng mới
         </Button>
       }
     >
       <Input
-        placeholder="Tìm khách hàng..."
+        placeholder="Tìm kiếm theo tên hoặc email khách hàng..."
         style={{ marginBottom: 20 }}
+        value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
       <Table
-        rowKey="id"
+        rowKey="_id"
         columns={columns}
         dataSource={filtered}
-        pagination={{ pageSize: 5 }}
+        loading={loading}
+        pagination={{ pageSize: 8 }}
       />
 
       <Modal
-        title={editing ? "Cập nhật khách hàng" : "Thêm khách hàng"}
+        title={editing ? "Cập nhật thông tin khách hàng" : "Thêm khách hàng mới"}
         open={open}
         footer={null}
         onCancel={() => setOpen(false)}
       >
-        <Form
-          layout="vertical"
-          form={form}
-          onFinish={handleSubmit}
-        >
+        <Form layout="vertical" form={form} onFinish={handleSubmit}>
           <Form.Item
             label="Họ tên"
-            name="fullName"
-            rules={[{ required: true }]}
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập họ tên!" }]}
           >
-            <Input />
+            <Input placeholder="Nguyễn Văn A" />
           </Form.Item>
 
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Vui lòng nhập email!" }]}
           >
-            <Input />
+            <Input placeholder="khachhang@gmail.com" />
           </Form.Item>
 
-          <Form.Item
-            label="Số điện thoại"
-            name="phone"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
+          {!editing && (
+            <Form.Item
+              label="Mật khẩu ban đầu"
+              name="password"
+              rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+            >
+              <Input.Password placeholder="Nhập mật khẩu ban đầu" />
+            </Form.Item>
+          )}
 
-          <Form.Item
-            label="Hạng"
-            name="rank"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="Trạng thái"
-            name="status"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Button htmlType="submit" block type="primary">
-            {editing ? "Cập nhật" : "Thêm"}
+          <Button htmlType="submit" block type="primary" style={{ marginTop: 10 }}>
+            {editing ? "Cập Nhật" : "Tạo Mới"}
           </Button>
         </Form>
       </Modal>
