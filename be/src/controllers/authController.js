@@ -81,7 +81,9 @@ exports.forgotPassword = async (req, res) => {
         user.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-        // Log OTP ra console backend để tiện kiểm thử / dev
+        const message = `Xin chào ${user.name},\n\nMã OTP để đặt lại mật khẩu của bạn là: ${otp}\n\nMã này sẽ hết hạn trong 10 phút.\nNếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này.`;
+
+        // Log OTP ra console backend để hỗ trợ dev kiểm tra
         console.log(`\n==========================================`);
         console.log(`🔑 [OTP SYSTEM] Mã OTP đặt lại mật khẩu cho [${user.email}] là: ${otp}`);
         console.log(`==========================================\n`);
@@ -92,13 +94,11 @@ exports.forgotPassword = async (req, res) => {
                 subject: 'Mã OTP Đặt Lại Mật Khẩu - Hệ Thống Đặt Vé',
                 message
             });
+            console.log(`✅ [EMAIL SUCCESS] Đã gửi mã OTP thành công về email: ${user.email}`);
             res.status(200).json({ message: 'Đã gửi mã OTP 6 chữ số về email của bạn. Vui lòng kiểm tra hộp thư!' });
         } catch (error) {
             console.error('Lỗi gửi Email:', error.message);
-            // Vẫn giữ OTP trong DB để người dùng kiểm thử thử nghiệm nếu chưa cấu hình SMTP thực tế
-            res.status(200).json({ 
-                message: `Đã khởi tạo mã OTP cho tài khoản (${user.email}). Vui lòng kiểm tra Console Backend hoặc Hộp thư Email của bạn.` 
-            });
+            res.status(500).json({ message: `Không thể gửi email: ${error.message}` });
         }
     } catch (error) {
         res.status(500).json({ message: error.message });
