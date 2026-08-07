@@ -100,7 +100,14 @@ exports.updateUserProfile = async (req, res) => {
         if (user) {
             user.name = req.body.name || user.name;
             user.email = req.body.email || user.email;
+
             if (req.body.password) {
+                if (req.body.currentPassword) {
+                    const isMatch = await user.matchPassword(req.body.currentPassword);
+                    if (!isMatch) {
+                        return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
+                    }
+                }
                 user.password = req.body.password;
             }
 

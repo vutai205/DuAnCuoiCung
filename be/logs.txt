@@ -1335,3 +1335,4 @@
 [2026-08-07T01:31:57.633Z] GET /api/bookings/my-bookings 304 - 120ms
 [2026-08-07T01:33:04.247Z] GET /api/bookings/my-bookings 304 - 135ms
 [2026-08-07T01:33:04.384Z] GET /api/bookings/my-bookings 304 - 121ms
+[2026-08-07T01:34:47.508Z] PUT /api/users/profile 200 - 104ms

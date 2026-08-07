@@ -49,7 +49,7 @@ export default function Profile() {
     }
   };
 
-  // Change password
+  // Change password with current password verification
   const handleChangePassword = async (values: any) => {
     if (values.newPassword !== values.confirmPassword) {
       message.error("Mật khẩu xác nhận không trùng khớp!");
@@ -61,7 +61,14 @@ export default function Profile() {
       const token = getToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      await axios.put("/api/users/profile", { password: values.newPassword }, config);
+      await axios.put(
+        "/api/users/profile",
+        {
+          currentPassword: values.currentPassword,
+          password: values.newPassword,
+        },
+        config
+      );
 
       message.success("Đổi mật khẩu thành công! Vui lòng nhớ mật khẩu mới của bạn.");
       setIsPasswordModalOpen(false);
@@ -197,16 +204,27 @@ export default function Profile() {
           form={passwordForm}
           onFinish={handleChangePassword}
           style={{ marginTop: 15 }}
+          autoComplete="off"
         >
+          <Form.Item
+            label="Mật khẩu hiện tại"
+            name="currentPassword"
+            rules={[
+              { required: true, message: "Vui lòng nhập mật khẩu hiện tại!" },
+            ]}
+          >
+            <Input.Password placeholder="Nhập mật khẩu hiện tại..." size="large" autoComplete="off" />
+          </Form.Item>
+
           <Form.Item
             label="Mật khẩu mới"
             name="newPassword"
             rules={[
               { required: true, message: "Vui lòng nhập mật khẩu mới!" },
-              { min: 6, message: "Mật khẩu phải từ 6 ký tự trở lên!" },
+              { min: 6, message: "Mật khẩu mới phải từ 6 ký tự trở lên!" },
             ]}
           >
-            <Input.Password placeholder="Nhập mật khẩu mới..." size="large" />
+            <Input.Password placeholder="Nhập mật khẩu mới..." size="large" autoComplete="off" />
           </Form.Item>
 
           <Form.Item
@@ -216,7 +234,7 @@ export default function Profile() {
               { required: true, message: "Vui lòng xác nhận mật khẩu mới!" },
             ]}
           >
-            <Input.Password placeholder="Nhập lại mật khẩu mới..." size="large" />
+            <Input.Password placeholder="Nhập lại mật khẩu mới..." size="large" autoComplete="off" />
           </Form.Item>
 
           <button
