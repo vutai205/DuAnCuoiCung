@@ -15,10 +15,12 @@ exports.getShowtimesByMovie = async (req, res) => {
         .populate('room', 'name') // Chỉ cần lấy tên phòng
         .sort({ startTime: 1 }); // Sắp xếp giờ chiếu tăng dần
 
-        // 2. Nhóm các suất chiếu theo Ngày (YYYY-MM-DD) để Frontend dễ render giống rapchieuphimquocgia
+        // 2. Nhóm các suất chiếu theo Ngày (YYYY-MM-DD) theo Múi giờ Việt Nam (UTC+7)
         const grouped = showtimes.reduce((acc, showtime) => {
-            // Lấy ra chuỗi ngày (VD: "2026-06-22")
-            const dateStr = showtime.startTime.toISOString().split('T')[0];
+            const d = new Date(showtime.startTime);
+            // Cộng 7 giờ để chuyển đổi UTC sang Giờ Việt Nam (GMT+7)
+            const vnDate = new Date(d.getTime() + (7 * 60 * 60 * 1000));
+            const dateStr = vnDate.toISOString().split('T')[0];
             
             if (!acc[dateStr]) {
                 acc[dateStr] = [];
