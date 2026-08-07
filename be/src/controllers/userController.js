@@ -102,11 +102,16 @@ exports.updateUserProfile = async (req, res) => {
             user.email = req.body.email || user.email;
 
             if (req.body.password) {
-                if (req.body.currentPassword) {
-                    const isMatch = await user.matchPassword(req.body.currentPassword);
-                    if (!isMatch) {
-                        return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
-                    }
+                if (!req.body.currentPassword) {
+                    return res.status(400).json({ message: 'Vui lòng nhập mật khẩu hiện tại!' });
+                }
+                const isMatch = await user.matchPassword(req.body.currentPassword);
+                if (!isMatch) {
+                    return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác!' });
+                }
+                const isSameAsOld = await user.matchPassword(req.body.password);
+                if (isSameAsOld) {
+                    return res.status(400).json({ message: 'Mật khẩu mới không được trùng với mật khẩu cũ!' });
                 }
                 user.password = req.body.password;
             }

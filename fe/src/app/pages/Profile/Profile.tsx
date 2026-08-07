@@ -51,6 +51,11 @@ export default function Profile() {
 
   // Change password with current password verification
   const handleChangePassword = async (values: any) => {
+    if (values.currentPassword === values.newPassword) {
+      message.error("Mật khẩu mới không được trùng với mật khẩu hiện tại!");
+      return;
+    }
+
     if (values.newPassword !== values.confirmPassword) {
       message.error("Mật khẩu xác nhận không trùng khớp!");
       return;
