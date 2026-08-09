@@ -45,7 +45,7 @@ const BookingPage: React.FC = () => {
   const [combos, setCombos] = useState<FoodCombo[]>([
     { id: 'c1', name: 'Combo Solo (1 Bỏng + 1 Nước)', desc: '1 Bỏng ngô 60oz + 1 Nước ngọt 22oz', price: 65000, count: 0 },
     { id: 'c2', name: 'Combo Đôi (1 Bỏng + 2 Nước)', desc: '1 Bỏng ngô 60oz + 2 Nước ngọt 22oz', price: 95000, count: 0 },
-    { id: 'c3', name: 'Combo Family (2 Bỏng + 2 Nước)', desc: '2 Bỏng ngô Caramel + 2 Nước lớn', price: 135000, count: 0 },
+    { id: 'c3', name: 'Combo Gia Đình (2 Bỏng + 2 Nước)', desc: '2 Bỏng ngô Caramel + 2 Nước lớn', price: 135000, count: 0 },
   ]);
 
   useEffect(() => {
@@ -111,17 +111,87 @@ const BookingPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
+  // Get couple seat pair (e.g. H1 & H2, H3 & H4)
+  const getCouplePair = (seatName: string, allSeats: SeatItem[]) => {
+    const match = seatName.match(/^([A-Z]+)(\d+)$/);
+    if (!match) return [seatName];
+    const rowLetter = match[1];
+    const seatNum = parseInt(match[2], 10);
+    
+    const currentSeatObj = allSeats.find(s => s.seatName === seatName);
+    if (currentSeatObj?.type !== 'couple') return [seatName];
+
+    // Odd seat pairs with next (1-2, 3-4, 5-6...), Even seat pairs with previous
+    const pairNum = seatNum % 2 !== 0 ? seatNum + 1 : seatNum - 1;
+    const pairName = `${rowLetter}${pairNum}`;
+    const pairSeatObj = allSeats.find(s => s.seatName === pairName);
+
+    if (pairSeatObj && pairSeatObj.type === 'couple' && !pairSeatObj.isBooked) {
+      return [seatName, pairName].sort((a, b) => {
+        const numA = parseInt(a.replace(/\D/g, ''), 10);
+        const numB = parseInt(b.replace(/\D/g, ''), 10);
+        return numA - numB;
+      });
+    }
+    return [seatName];
+  };
+
+  // Validate no single isolated empty seat in any row
+  const checkIsolatedEmptySeat = (proposedSeats: string[], allSeats: SeatItem[]) => {
+    const rows = Array.from(new Set(allSeats.map(s => s.seatName.charAt(0))));
+
+    for (const rowLetter of rows) {
+      const rowSeats = allSeats.filter(s => s.seatName.startsWith(rowLetter));
+      rowSeats.sort((a, b) => {
+        const numA = parseInt(a.seatName.replace(/\D/g, ''), 10);
+        const numB = parseInt(b.seatName.replace(/\D/g, ''), 10);
+        return numA - numB;
+      });
+
+      const isOccupied = (s: SeatItem) => s.isBooked || proposedSeats.includes(s.seatName);
+
+      for (let i = 0; i < rowSeats.length; i++) {
+        const currentEmpty = !isOccupied(rowSeats[i]);
+        if (!currentEmpty) continue;
+
+        const prevOccupied = i > 0 ? isOccupied(rowSeats[i - 1]) : false;
+        const nextOccupied = i < rowSeats.length - 1 ? isOccupied(rowSeats[i + 1]) : false;
+
+        // Isolated single empty seat surrounded by occupied seats
+        if (prevOccupied && nextOccupied) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
   const handleToggleSeat = (seat: SeatItem) => {
     if (seat.isBooked) return;
-    if (selectedSeats.includes(seat.seatName)) {
-      setSelectedSeats(selectedSeats.filter(s => s !== seat.seatName));
+
+    const targetSeats = getCouplePair(seat.seatName, showtimeData?.seats || []);
+    const isAlreadySelected = targetSeats.every(s => selectedSeats.includes(s));
+
+    let nextSeats: string[];
+    if (isAlreadySelected) {
+      nextSeats = selectedSeats.filter(s => !targetSeats.includes(s));
     } else {
-      if (selectedSeats.length >= 8) {
+      const toAdd = targetSeats.filter(s => !selectedSeats.includes(s));
+      if (selectedSeats.length + toAdd.length > 8) {
         alert('Bạn chỉ được chọn tối đa 8 ghế trong một lần đặt!');
         return;
       }
-      setSelectedSeats([...selectedSeats, seat.seatName]);
+      nextSeats = [...selectedSeats, ...toAdd];
     }
+
+    // Validate isolated empty seat rule
+    if (nextSeats.length > 0 && checkIsolatedEmptySeat(nextSeats, showtimeData?.seats || [])) {
+      alert('⚠️ Vui lòng không để trống 1 ghế đơn ở giữa các ghế chọn!');
+      return;
+    }
+
+    setSelectedSeats(nextSeats);
   };
 
   const handleComboChange = (id: string, delta: number) => {
@@ -137,13 +207,17 @@ const BookingPage: React.FC = () => {
     const seatObj = showtimeData.seats.find(s => s.seatName === seatName);
     if (!seatObj) return base;
     if (seatObj.type === 'vip') return base + 15000;
-    if (seatObj.type === 'couple') return Math.round(base * 1.8);
+    if (seatObj.type === 'couple') return base + 15000; // 75k per seat = 150k per pair
     return base;
   };
 
   const ticketsTotal = selectedSeats.reduce((sum, seat) => sum + calculateSeatPrice(seat), 0);
   const combosTotal = combos.reduce((sum, c) => sum + c.price * c.count, 0);
   const grandTotal = ticketsTotal + combosTotal;
+
+  const basePrice = showtimeData?.ticketPrice || 60000;
+  const vipPrice = basePrice + 15000;
+  const couplePrice = (basePrice + 15000) * 2; // Price for 1 pair (2 seats)
 
   const handleCreateBooking = async () => {
     if (!user) {
@@ -173,7 +247,6 @@ const BookingPage: React.FC = () => {
       const booking = res.data;
 
       if (paymentMethod === 'vnpay') {
-        // Gọi API tạo VNPay payment URL
         const payRes = await axios.post('/api/payment/create_payment_url', {
           bookingId: booking._id,
           amount: grandTotal
@@ -182,7 +255,6 @@ const BookingPage: React.FC = () => {
         });
 
         if (payRes.data && payRes.data.paymentUrl) {
-          // Chuyển hướng khách tới cổng thanh toán VNPay
           window.location.href = payRes.data.paymentUrl;
           return;
         }
@@ -222,6 +294,8 @@ const BookingPage: React.FC = () => {
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
+
+  const selectedCombos = combos.filter(c => c.count > 0);
 
   return (
     <div className="booking-page-container">
@@ -283,13 +357,26 @@ const BookingPage: React.FC = () => {
             })}
           </div>
 
-          {/* Seat Legends */}
+          {/* Seat Legends with Specific Prices */}
           <div className="seat-legends">
-            <div className="legend-item"><span className="legend-box regular"></span> Ghế Thường</div>
-            <div className="legend-item"><span className="legend-box vip"></span> Ghế VIP</div>
-            <div className="legend-item"><span className="legend-box couple"></span> Ghế Đôi</div>
-            <div className="legend-item"><span className="legend-box selected"></span> Đang chọn</div>
-            <div className="legend-item"><span className="legend-box booked"></span> Đã bán</div>
+            <div className="legend-item">
+              <span className="legend-box regular"></span> 
+              Ghế Thường ({basePrice.toLocaleString('vi-VN')}đ)
+            </div>
+            <div className="legend-item">
+              <span className="legend-box vip"></span> 
+              Ghế VIP ({vipPrice.toLocaleString('vi-VN')}đ)
+            </div>
+            <div className="legend-item">
+              <span className="legend-box couple"></span> 
+              Ghế Đôi ({couplePrice.toLocaleString('vi-VN')}đ/cặp)
+            </div>
+            <div className="legend-item">
+              <span className="legend-box selected"></span> Đang chọn
+            </div>
+            <div className="legend-item">
+              <span className="legend-box booked"></span> Đã bán
+            </div>
           </div>
 
           {/* Food Combos Section */}
@@ -316,7 +403,7 @@ const BookingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Sidebar: Checkout Summary */}
+        {/* Right Sidebar: Detailed Payment Invoice Table */}
         <div className="checkout-summary-sidebar">
           <div className="summary-card">
             <h3 className="summary-title">TỔNG KẾT ĐẶT VÉ</h3>
@@ -328,7 +415,7 @@ const BookingPage: React.FC = () => {
               </div>
               <div className="summary-row">
                 <span className="label">Rạp / Phòng:</span>
-                <span className="value">{showtimeData.room}</span>
+                <span className="value">VENRI CINEMA - {showtimeData.room}</span>
               </div>
               <div className="summary-row">
                 <span className="label">Suất chiếu:</span>
@@ -336,23 +423,52 @@ const BookingPage: React.FC = () => {
                   {showtimeData.startTime ? dayjs(showtimeData.startTime).format('HH:mm - DD/MM/YYYY') : '---'}
                 </span>
               </div>
-              <div className="summary-row">
-                <span className="label">Ghế chọn:</span>
-                <strong className="value seat-highlight">
-                  {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'Chưa chọn'}
-                </strong>
-              </div>
+            </div>
+
+            {/* Detailed Payment Breakdown Table (Like National Cinema Center) */}
+            <div className="payment-breakdown-box">
+              <h4 className="breakdown-heading">Thông tin thanh toán</h4>
+              <table className="breakdown-table">
+                <thead>
+                  <tr>
+                    <th>Danh mục</th>
+                    <th className="text-center">Số lượng</th>
+                    <th className="text-right">Tổng tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedSeats.length > 0 ? (
+                    <tr>
+                      <td>
+                        <strong>Ghế ({selectedSeats.join(', ')})</strong>
+                      </td>
+                      <td className="text-center">{selectedSeats.length}</td>
+                      <td className="text-right highlight-price">
+                        {ticketsTotal.toLocaleString('vi-VN')}đ
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <td colSpan={3} className="empty-row-text">Chưa chọn ghế ngồi</td>
+                    </tr>
+                  )}
+
+                  {selectedCombos.map(combo => (
+                    <tr key={combo.id}>
+                      <td>
+                        <strong>{combo.name}</strong>
+                      </td>
+                      <td className="text-center">{combo.count}</td>
+                      <td className="text-right highlight-price">
+                        {(combo.price * combo.count).toLocaleString('vi-VN')}đ
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             <div className="summary-section border-top">
-              <div className="summary-row">
-                <span>Tiền vé ({selectedSeats.length} ghế):</span>
-                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(ticketsTotal)}</span>
-              </div>
-              <div className="summary-row">
-                <span>Bỏng nước:</span>
-                <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(combosTotal)}</span>
-              </div>
               <div className="summary-row total-price-row">
                 <span>TỔNG TIỀN:</span>
                 <span className="grand-price">
@@ -405,7 +521,7 @@ const BookingPage: React.FC = () => {
             <div className="ticket-success-header">
               <span className="success-icon">🎉</span>
               <h2>ĐẶT VÉ THÀNH CÔNG!</h2>
-              <p>Cảm ơn bạn đã lựa chọn Trung tâm chiếu phim Quốc gia</p>
+              <p>Cảm ơn bạn đã lựa chọn hệ thống VENRI CINEMA</p>
             </div>
 
             <div className="ticket-details-box">
