@@ -1491,3 +1491,7 @@
 [2026-08-09T03:48:58.705Z] GET /api/users 304 - 57ms
 [2026-08-09T04:04:50.567Z] GET /api/users 304 - 68ms
 [2026-08-09T04:04:50.637Z] GET /api/users 304 - 55ms
+[2026-08-09T07:16:25.117Z] GET /api/movies 304 - 35ms
+[2026-08-09T07:16:25.111Z] GET /api/banners 304 - 43ms
+[2026-08-09T07:16:25.155Z] GET /api/banners 304 - 25ms
+[2026-08-09T07:16:25.154Z] GET /api/movies 304 - 30ms
