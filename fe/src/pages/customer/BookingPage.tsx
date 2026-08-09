@@ -219,6 +219,44 @@ const BookingPage: React.FC = () => {
   const vipPrice = basePrice + 15000;
   const couplePrice = (basePrice + 15000) * 2; // Price for 1 pair (2 seats)
 
+  // Format seat display cleanly e.g. "C5, D8-D10, E10, H5-H6"
+  const formatSeatDisplay = (selected: string[]) => {
+    if (selected.length === 0) return 'Chưa chọn';
+
+    const rowsMap: { [row: string]: number[] } = {};
+    selected.forEach(s => {
+      const match = s.match(/^([A-Z]+)(\d+)$/);
+      if (match) {
+        const row = match[1];
+        const num = parseInt(match[2], 10);
+        if (!rowsMap[row]) rowsMap[row] = [];
+        rowsMap[row].push(num);
+      }
+    });
+
+    const parts: string[] = [];
+    Object.keys(rowsMap).sort().forEach(row => {
+      const nums = rowsMap[row].sort((a, b) => a - b);
+      let i = 0;
+      while (i < nums.length) {
+        const start = nums[i];
+        let end = start;
+        while (i + 1 < nums.length && nums[i + 1] === end + 1) {
+          end = nums[i + 1];
+          i++;
+        }
+        if (start === end) {
+          parts.push(`${row}${start}`);
+        } else {
+          parts.push(`${row}${start}-${row}${end}`);
+        }
+        i++;
+      }
+    });
+
+    return parts.join(', ');
+  };
+
   const handleCreateBooking = async () => {
     if (!user) {
       alert('Vui lòng đăng nhập để tiến hành đặt vé!');
@@ -328,6 +366,52 @@ const BookingPage: React.FC = () => {
           <div className="seat-matrix">
             {rows.map(rowLetter => {
               const rowSeats = showtimeData.seats.filter(s => s.seatName.startsWith(rowLetter));
+              const hasCoupleSeats = rowSeats.some(s => s.type === 'couple');
+
+              if (hasCoupleSeats) {
+                const pairs: SeatItem[][] = [];
+                for (let i = 0; i < rowSeats.length; i += 2) {
+                  pairs.push(rowSeats.slice(i, i + 2));
+                }
+
+                return (
+                  <div className="seat-row" key={rowLetter}>
+                    <span className="row-label">{rowLetter}</span>
+                    <div className="seats-list couple-row-list">
+                      {pairs.map((pair, pIdx) => {
+                        const isPairSelected = pair.some(s => selectedSeats.includes(s.seatName));
+                        return (
+                          <div
+                            key={pIdx}
+                            className={`couple-pair-wrapper ${isPairSelected ? 'selected-pair' : ''}`}
+                          >
+                            {pair.map(seat => {
+                              const isSelected = selectedSeats.includes(seat.seatName);
+                              let seatClass = `seat-btn ${seat.type}`;
+                              if (seat.isBooked) seatClass += ' booked';
+                              if (isSelected) seatClass += ' selected';
+
+                              return (
+                                <button
+                                  key={seat.seatName}
+                                  className={seatClass}
+                                  disabled={seat.isBooked}
+                                  onClick={() => handleToggleSeat(seat)}
+                                  title={`${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
+                                >
+                                  {seat.seatName}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="row-label">{rowLetter}</span>
+                  </div>
+                );
+              }
+
               return (
                 <div className="seat-row" key={rowLetter}>
                   <span className="row-label">{rowLetter}</span>
@@ -425,9 +509,9 @@ const BookingPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Detailed Payment Breakdown Table (Like National Cinema Center) */}
+            {/* Detailed Payment Breakdown Table (Sleek Dark National Cinema Style) */}
             <div className="payment-breakdown-box">
-              <h4 className="breakdown-heading">Thông tin thanh toán</h4>
+              <h4 className="breakdown-heading">THÔNG TIN THANH TOÁN</h4>
               <table className="breakdown-table">
                 <thead>
                   <tr>
@@ -440,7 +524,8 @@ const BookingPage: React.FC = () => {
                   {selectedSeats.length > 0 ? (
                     <tr>
                       <td>
-                        <strong>Ghế ({selectedSeats.join(', ')})</strong>
+                        <div className="item-name">Ghế rạp</div>
+                        <div className="item-subtext">{formatSeatDisplay(selectedSeats)}</div>
                       </td>
                       <td className="text-center">{selectedSeats.length}</td>
                       <td className="text-right highlight-price">
@@ -456,7 +541,7 @@ const BookingPage: React.FC = () => {
                   {selectedCombos.map(combo => (
                     <tr key={combo.id}>
                       <td>
-                        <strong>{combo.name}</strong>
+                        <div className="item-name">{combo.name}</div>
                       </td>
                       <td className="text-center">{combo.count}</td>
                       <td className="text-right highlight-price">
@@ -537,7 +622,7 @@ const BookingPage: React.FC = () => {
                 </div>
                 <div className="info-item">
                   <span>Ghế ngồi:</span>
-                  <strong className="red-text">{createdBooking.seats?.join(', ')}</strong>
+                  <strong className="red-text">{formatSeatDisplay(createdBooking.seats || [])}</strong>
                 </div>
                 <div className="info-item">
                   <span>Phòng chiếu:</span>

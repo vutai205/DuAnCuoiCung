@@ -144,10 +144,31 @@
   gap: 0.6rem;
 }
 
+.couple-row-list {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.couple-pair-wrapper {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1.5px dashed rgba(232, 121, 249, 0.7);
+  border-radius: 10px;
+  background: rgba(192, 38, 211, 0.12);
+  transition: all 0.2s ease;
+}
+
+.couple-pair-wrapper.selected-pair {
+  border: 2px solid #e50914;
+  background: rgba(229, 9, 20, 0.25);
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.5);
+}
+
 .seat-btn {
   width: 38px;
   height: 38px;
-  border-radius: 8px;
+  border-radius: 7px;
   border: 1px solid transparent;
   font-size: 0.8rem;
   font-weight: 700;
@@ -157,6 +178,7 @@
   justify-content: center;
   transition: all 0.15s ease;
   color: #fff;
+  box-sizing: border-box;
 }
 
 .seat-btn.regular {
@@ -172,11 +194,11 @@
 .seat-btn.couple {
   background: rgba(192, 38, 211, 0.7);
   border-color: #e879f9;
-  width: 44px;
+  width: 38px; /* EXACTLY MATCHES 38px SO ALL ROWS ALIGN PERFECTLY */
 }
 
 .seat-btn:hover:not(:disabled) {
-  transform: scale(1.15);
+  transform: scale(1.1);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
 }
 
@@ -184,7 +206,6 @@
   background: #e50914 !important;
   border-color: #fff !important;
   box-shadow: 0 0 15px rgba(229, 9, 20, 0.8) !important;
-  transform: scale(1.1);
 }
 
 .seat-btn.booked {
@@ -344,24 +365,29 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
-.seat-highlight {
-  color: #ff9800;
+.value {
+  text-align: right;
+  max-width: 250px;
+  word-break: break-word;
 }
 
-/* Payment Breakdown Table (Like National Cinema Center) */
+/* Payment Breakdown Table (Sleek Dark Theme) */
 .payment-breakdown-box {
   margin: 1.2rem 0;
-  background: rgba(30, 41, 59, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 .breakdown-heading {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 800;
-  color: #fff;
-  margin: 0 0 0.8rem 0;
+  color: #e50914;
+  padding: 0.8rem 1rem;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -374,21 +400,35 @@
 
 .breakdown-table th {
   text-align: left;
-  padding: 0.6rem 0.4rem;
-  color: rgba(255, 255, 255, 0.5);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.7rem 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-weight: 700;
 }
 
 .breakdown-table td {
-  padding: 0.7rem 0.4rem;
-  color: rgba(255, 255, 255, 0.85);
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
-  word-break: break-word;
+  padding: 0.8rem 0.8rem;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: middle;
 }
 
 .breakdown-table tr:last-child td {
   border-bottom: none;
+}
+
+.item-name {
+  font-weight: 700;
+  color: #fff;
+}
+
+.item-subtext {
+  font-size: 0.78rem;
+  color: #ff9800;
+  font-weight: 600;
+  margin-top: 3px;
+  word-break: break-word;
 }
 
 .text-center {
