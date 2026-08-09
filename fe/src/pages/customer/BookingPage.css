@@ -149,25 +149,38 @@
   gap: 0.6rem;
 }
 
+/* Absolute couple pair wrapper overlay: takes ZERO space in flex layout */
 .couple-pair-wrapper {
   display: flex;
-  gap: 3px;
-  padding: 3px;
-  border: 1.5px dashed rgba(232, 121, 249, 0.7);
+  gap: 0.6rem;
+  position: relative;
+}
+
+.couple-pair-wrapper::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: -4px;
+  right: -4px;
+  border: 1.5px dashed rgba(232, 121, 249, 0.75);
   border-radius: 10px;
   background: rgba(192, 38, 211, 0.12);
+  pointer-events: none;
   transition: all 0.2s ease;
 }
 
-.couple-pair-wrapper.selected-pair {
-  border: 2px solid #e50914;
+.couple-pair-wrapper.selected-pair::before {
+  border: 1.5px solid #e50914;
   background: rgba(229, 9, 20, 0.25);
-  box-shadow: 0 0 12px rgba(229, 9, 20, 0.5);
+  box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
 }
 
 .seat-btn {
   width: 38px;
   height: 38px;
+  min-width: 38px;
+  max-width: 38px;
   border-radius: 7px;
   border: 1px solid transparent;
   font-size: 0.8rem;
@@ -179,6 +192,9 @@
   transition: all 0.15s ease;
   color: #fff;
   box-sizing: border-box;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .seat-btn.regular {
@@ -194,11 +210,10 @@
 .seat-btn.couple {
   background: rgba(192, 38, 211, 0.7);
   border-color: #e879f9;
-  width: 38px; /* EXACTLY MATCHES 38px SO ALL ROWS ALIGN PERFECTLY */
 }
 
 .seat-btn:hover:not(:disabled) {
-  transform: scale(1.1);
+  transform: scale(1.08);
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
 }
 

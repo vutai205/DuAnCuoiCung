@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
+import { QRCode, message as antMessage } from 'antd';
 import { getAuthUser, getToken } from '../../services/authApi';
 import './BookingPage.css';
 
@@ -92,6 +93,31 @@ const BookingPage: React.FC = () => {
           });
           setShowtimeData(prev => prev ? { ...prev, startTime: currentSt.startTime } : null);
         }
+
+        // Restore active pending booking within 5 mins if user exited and returned
+        const token = getToken();
+        if (token && user) {
+          try {
+            const myBookingsRes = await axios.get('/api/bookings/my-bookings', {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            const activePending = myBookingsRes.data.find((b: any) => 
+              b.showtime?._id === showtimeId && 
+              b.status === 'pending' && 
+              b.expiresAt && 
+              new Date(b.expiresAt).getTime() > Date.now()
+            );
+
+            if (activePending) {
+              setSelectedSeats(activePending.seats || []);
+              const remainingSecs = Math.max(0, Math.floor((new Date(activePending.expiresAt).getTime() - Date.now()) / 1000));
+              setTimeLeft(remainingSecs);
+              antMessage.info('Đã khôi phục ghế giữ chỗ 5 phút trước đó của bạn!');
+            }
+          } catch (e) {
+            console.error('Không thể khôi phục ghế giữ chỗ:', e);
+          }
+        }
       } catch (err) {
         console.error('Lỗi khi tải sơ đồ ghế:', err);
       } finally {
@@ -106,7 +132,15 @@ const BookingPage: React.FC = () => {
   useEffect(() => {
     if (timeLeft <= 0) return;
     const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          antMessage.error('⏱ Thời gian giữ chỗ 5 phút đã hết hạn! Ghế đã tự động giải phóng.');
+          setSelectedSeats([]);
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
@@ -157,7 +191,6 @@ const BookingPage: React.FC = () => {
         const prevOccupied = i > 0 ? isOccupied(rowSeats[i - 1]) : false;
         const nextOccupied = i < rowSeats.length - 1 ? isOccupied(rowSeats[i + 1]) : false;
 
-        // Isolated single empty seat surrounded by occupied seats
         if (prevOccupied && nextOccupied) {
           return true;
         }
@@ -185,13 +218,16 @@ const BookingPage: React.FC = () => {
       nextSeats = [...selectedSeats, ...toAdd];
     }
 
-    // Validate isolated empty seat rule
     if (nextSeats.length > 0 && checkIsolatedEmptySeat(nextSeats, showtimeData?.seats || [])) {
       alert('⚠️ Vui lòng không để trống 1 ghế đơn ở giữa các ghế chọn!');
       return;
     }
 
     setSelectedSeats(nextSeats);
+    // Reset timer to 5 minutes when user modifies seat selection
+    if (nextSeats.length > 0) {
+      setTimeLeft(300);
+    }
   };
 
   const handleComboChange = (id: string, delta: number) => {
@@ -200,14 +236,13 @@ const BookingPage: React.FC = () => {
     );
   };
 
-  // Price calculations
   const calculateSeatPrice = (seatName: string) => {
     if (!showtimeData) return 0;
     const base = showtimeData.ticketPrice;
     const seatObj = showtimeData.seats.find(s => s.seatName === seatName);
     if (!seatObj) return base;
     if (seatObj.type === 'vip') return base + 15000;
-    if (seatObj.type === 'couple') return base + 15000; // 75k per seat = 150k per pair
+    if (seatObj.type === 'couple') return base + 15000;
     return base;
   };
 
@@ -217,9 +252,8 @@ const BookingPage: React.FC = () => {
 
   const basePrice = showtimeData?.ticketPrice || 60000;
   const vipPrice = basePrice + 15000;
-  const couplePrice = (basePrice + 15000) * 2; // Price for 1 pair (2 seats)
+  const couplePrice = (basePrice + 15000) * 2;
 
-  // Format seat display cleanly e.g. "C5, D8-D10, E10, H5-H6"
   const formatSeatDisplay = (selected: string[]) => {
     if (selected.length === 0) return 'Chưa chọn';
 
@@ -269,13 +303,27 @@ const BookingPage: React.FC = () => {
       return;
     }
 
+    if (timeLeft <= 0) {
+      alert('Thời gian giữ chỗ 5 phút đã hết hạn. Vui lòng chọn lại ghế!');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const token = getToken();
+      const selectedCombosData = combos.filter(c => c.count > 0).map(c => ({
+        foodId: c.id,
+        name: c.name,
+        count: c.count,
+        price: c.price
+      }));
+
       const payload = {
         showtimeId,
         seats: selectedSeats,
-        totalPrice: grandTotal
+        combos: selectedCombosData,
+        totalPrice: grandTotal,
+        paymentMethod
       };
 
       const res = await axios.post('/api/bookings', payload, {
@@ -324,7 +372,6 @@ const BookingPage: React.FC = () => {
     );
   }
 
-  // Format seat grid by rows A, B, C...
   const rows = Array.from(new Set(showtimeData.seats.map(s => s.seatName.charAt(0))));
 
   const formatTimer = (seconds: number) => {
@@ -346,7 +393,7 @@ const BookingPage: React.FC = () => {
           </div>
 
           <div className="timer-box">
-            <span className="timer-label">Thời gian giữ ghế:</span>
+            <span className="timer-label">Thời gian giữ chỗ 5p:</span>
             <span className={`timer-clock ${timeLeft < 60 ? 'warning' : ''}`}>
               ⏱ {formatTimer(timeLeft)}
             </span>
@@ -590,16 +637,16 @@ const BookingPage: React.FC = () => {
 
             <button
               className="btn-checkout-submit"
-              disabled={selectedSeats.length === 0 || isSubmitting}
+              disabled={selectedSeats.length === 0 || isSubmitting || timeLeft <= 0}
               onClick={handleCreateBooking}
             >
-              {isSubmitting ? 'Đang xử lý...' : 'XÁC NHẬN ĐẶT VÉ'}
+              {isSubmitting ? 'Đang xử lý...' : timeLeft <= 0 ? 'HẾT HẠN GIỮ CHỖ' : 'XÁC NHẬN ĐẶT VÉ'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Ticket Success Confirmation Modal */}
+      {/* Ticket Success Confirmation Modal with Real QR Code */}
       {createdBooking && (
         <div className="ticket-modal-backdrop">
           <div className="ticket-modal-card">
@@ -610,9 +657,13 @@ const BookingPage: React.FC = () => {
             </div>
 
             <div className="ticket-details-box">
-              <div className="ticket-qr-section">
-                <div className="barcode-mock">||| | |||| | ||| |||| |||</div>
-                <div className="ticket-code">MÃ VÉ: <strong>#{createdBooking._id?.slice(-8).toUpperCase()}</strong></div>
+              <div className="ticket-qr-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '1rem 0' }}>
+                <div style={{ padding: '10px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
+                  <QRCode value={createdBooking.ticketCode || createdBooking._id} size={150} color="#000" bgColor="#fff" />
+                </div>
+                <div className="ticket-code" style={{ marginTop: '0.8rem' }}>
+                  MÃ SỐ VÉ: <strong>#{createdBooking.ticketCode || createdBooking._id?.toUpperCase()}</strong>
+                </div>
               </div>
 
               <div className="ticket-info-grid">

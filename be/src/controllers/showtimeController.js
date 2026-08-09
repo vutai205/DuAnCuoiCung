@@ -91,8 +91,25 @@ exports.getShowtimeSeats = async (req, res) => {
 // @access  Public/Admin
 exports.getShowtimes = async (req, res) => {
     try {
-        const showtimes = await Showtime.find({}).populate('movie room');
-        res.json(showtimes);
+        const showtimes = await Showtime.find({}).populate('movie room').sort({ startTime: 1 }).lean();
+        
+        const showtimeIds = showtimes.map(st => st._id);
+        const activeBookings = await Booking.aggregate([
+            { $match: { showtime: { $in: showtimeIds }, status: { $ne: 'cancelled' } } },
+            { $group: { _id: '$showtime', totalSeats: { $sum: { $size: '$seats' } } } }
+        ]);
+
+        const bookingMap = {};
+        activeBookings.forEach(b => {
+            bookingMap[b._id.toString()] = b.totalSeats;
+        });
+
+        const showtimesWithBookings = showtimes.map(st => ({
+            ...st,
+            bookedSeatsCount: bookingMap[st._id.toString()] || 0
+        }));
+
+        res.json(showtimesWithBookings);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -105,6 +122,10 @@ exports.createShowtime = async (req, res) => {
     try {
         const { movie, room, startTime, endTime, ticketPrice } = req.body;
         
+        if (new Date(startTime) < new Date()) {
+            return res.status(400).json({ message: 'Không thể tạo suất chiếu ở thời gian trong quá khứ!' });
+        }
+
         const showtime = new Showtime({
             movie,
             room,
@@ -120,6 +141,34 @@ exports.createShowtime = async (req, res) => {
     }
 };
 
+// @desc    Create batch showtimes (Admin)
+// @route   POST /api/showtimes/batch
+// @access  Private/Admin
+exports.createBatchShowtimes = async (req, res) => {
+    try {
+        const { showtimes } = req.body;
+        if (!Array.isArray(showtimes) || showtimes.length === 0) {
+            return res.status(400).json({ message: 'Danh sách suất chiếu không hợp lệ!' });
+        }
+
+        const now = new Date();
+        const validShowtimes = showtimes.filter(st => new Date(st.startTime) >= now);
+
+        if (validShowtimes.length === 0) {
+            return res.status(400).json({ message: 'Tất cả các suất chiếu được chọn đều trong quá khứ, không thể lưu!' });
+        }
+
+        const createdShowtimes = await Showtime.insertMany(validShowtimes);
+        res.status(201).json({
+            success: true,
+            count: createdShowtimes.length,
+            message: `Tạo thành công ${createdShowtimes.length} suất chiếu!`
+        });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
 // @desc    Update a showtime
 // @route   PUT /api/showtimes/:id
 // @access  Private/Admin
@@ -127,13 +176,34 @@ exports.updateShowtime = async (req, res) => {
     try {
         const showtime = await Showtime.findById(req.params.id);
 
-        if (showtime) {
-            Object.assign(showtime, req.body);
-            const updatedShowtime = await showtime.save();
-            res.json(updatedShowtime);
-        } else {
-            res.status(404).json({ message: 'Showtime not found' });
+        if (!showtime) {
+            return res.status(404).json({ message: 'Không tìm thấy suất chiếu!' });
         }
+
+        const now = new Date();
+        const start = new Date(showtime.startTime);
+        const end = showtime.endTime ? new Date(showtime.endTime) : start;
+
+        if (end < now) {
+            return res.status(400).json({ message: 'Suất chiếu đã kết thúc, không thể chỉnh sửa!' });
+        }
+
+        if (start <= now && end >= now) {
+            return res.status(400).json({ message: 'Suất chiếu đang diễn ra, không thể chỉnh sửa!' });
+        }
+
+        const activeBookingsCount = await Booking.countDocuments({
+            showtime: showtime._id,
+            status: { $ne: 'cancelled' }
+        });
+
+        if (activeBookingsCount > 0) {
+            return res.status(400).json({ message: `Suất chiếu đã có khách đặt vé (${activeBookingsCount} đơn vé), không thể chỉnh sửa!` });
+        }
+
+        Object.assign(showtime, req.body);
+        const updatedShowtime = await showtime.save();
+        res.json(updatedShowtime);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
@@ -146,12 +216,29 @@ exports.deleteShowtime = async (req, res) => {
     try {
         const showtime = await Showtime.findById(req.params.id);
 
-        if (showtime) {
-            await showtime.deleteOne();
-            res.json({ message: 'Showtime removed' });
-        } else {
-            res.status(404).json({ message: 'Showtime not found' });
+        if (!showtime) {
+            return res.status(404).json({ message: 'Không tìm thấy suất chiếu!' });
         }
+
+        const now = new Date();
+        const start = new Date(showtime.startTime);
+        const end = showtime.endTime ? new Date(showtime.endTime) : start;
+
+        if (start <= now && end >= now) {
+            return res.status(400).json({ message: 'Suất chiếu đang diễn ra, không thể xóa!' });
+        }
+
+        const activeBookingsCount = await Booking.countDocuments({
+            showtime: showtime._id,
+            status: { $ne: 'cancelled' }
+        });
+
+        if (activeBookingsCount > 0) {
+            return res.status(400).json({ message: `Suất chiếu đã có khách đặt vé (${activeBookingsCount} đơn vé), không thể xóa!` });
+        }
+
+        await showtime.deleteOne();
+        res.json({ message: 'Đã xóa suất chiếu thành công' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

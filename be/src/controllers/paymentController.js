@@ -2,6 +2,7 @@ const moment = require('moment');
 const crypto = require('crypto');
 const qs = require('qs');
 const Booking = require('../models/Booking');
+const { deductFoodStock } = require('./bookingController');
 
 // Hàm hỗ trợ sắp xếp các tham số để tạo chữ ký (Bắt buộc bởi VNPay)
 function sortObject(obj) {
@@ -99,10 +100,13 @@ exports.vnpayReturn = async (req, res) => {
 
         if (responseCode === '00') {
             // Thanh toán thành công (00) -> Cập nhật DB
-            await Booking.findByIdAndUpdate(bookingId, { 
-                status: 'confirmed', 
-                paymentStatus: 'paid' 
-            });
+            const booking = await Booking.findById(bookingId);
+            if (booking) {
+                booking.status = 'confirmed';
+                booking.paymentStatus = 'paid';
+                await booking.save();
+                await deductFoodStock(booking);
+            }
             // Đá khách hàng về Frontend trang Thành công
             return res.redirect(`http://localhost:5173/payment-success?bookingId=${bookingId}`);
         } else {

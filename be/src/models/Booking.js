@@ -4,11 +4,26 @@ const bookingSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     showtime: { type: mongoose.Schema.Types.ObjectId, ref: 'Showtime', required: true },
     seats: [{ type: String, required: true }],
+    combos: [
+        {
+            foodId: { type: mongoose.Schema.Types.ObjectId, ref: 'Food' },
+            name: { type: String },
+            count: { type: Number },
+            price: { type: Number }
+        }
+    ],
     totalPrice: { type: Number, required: true },
+    ticketCode: { type: String },
+    paymentMethod: {
+        type: String,
+        enum: ['vnpay', 'cash'],
+        default: 'vnpay'
+    },
+    expiresAt: { type: Date, default: null }, // Null for cash/direct payment at counter
     status: {
         type: String,
         enum: ['pending', 'confirmed', 'cancelled'],
-        default: 'pending' // Default to pending until VNPay confirms
+        default: 'pending'
     },
     paymentStatus: {
         type: String,
@@ -18,6 +33,37 @@ const bookingSchema = new mongoose.Schema({
     isCheckedIn: {
         type: Boolean,
         default: false
+    },
+    isFoodDeducted: {
+        type: Boolean,
+        default: false
+    },
+    checkedInAt: {
+        type: Date,
+        default: null
+    },
+    checkInCancelReason: {
+        type: String,
+        default: null
+    },
+    checkInCancelledAt: {
+        type: Date,
+        default: null
+    },
+    checkInHistory: [
+        {
+            action: { type: String, enum: ['checkin', 'cancel_checkin'] },
+            reason: { type: String },
+            timestamp: { type: Date, default: Date.now }
+        }
+    ],
+    isPrinted: {
+        type: Boolean,
+        default: false
+    },
+    printedAt: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 

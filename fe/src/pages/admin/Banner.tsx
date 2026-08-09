@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Table, Button, Modal, Form, Input, Switch, Popconfirm, message, Tag, Space, Card, Image } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, Switch, Popconfirm, message, Tag, Space, Card, Image, Upload, Segmented, Spin } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, InboxOutlined, UploadOutlined, LinkOutlined } from '@ant-design/icons';
 import { getToken } from '../../services/authApi';
 
 interface BannerItem {
@@ -15,8 +15,11 @@ interface BannerItem {
 const BannerManager: React.FC = () => {
   const [banners, setBanners] = useState<BannerItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
+  const [uploadMode, setUploadMode] = useState<'file' | 'url'>('file');
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [form] = Form.useForm();
 
   const fetchBanners = async () => {
@@ -40,6 +43,8 @@ const BannerManager: React.FC = () => {
 
   const handleOpenAddModal = () => {
     setEditingBanner(null);
+    setPreviewUrl('');
+    setUploadMode('file');
     form.resetFields();
     form.setFieldsValue({ isActive: true });
     setIsModalOpen(true);
@@ -47,6 +52,8 @@ const BannerManager: React.FC = () => {
 
   const handleOpenEditModal = (banner: BannerItem) => {
     setEditingBanner(banner);
+    setPreviewUrl(banner.imageUrl);
+    setUploadMode(banner.imageUrl && banner.imageUrl.startsWith('http') && !banner.imageUrl.includes('/uploads/') ? 'url' : 'file');
     form.setFieldsValue({
       title: banner.title,
       imageUrl: banner.imageUrl,
@@ -54,6 +61,39 @@ const BannerManager: React.FC = () => {
       isActive: banner.isActive
     });
     setIsModalOpen(true);
+  };
+
+  const handleCustomUpload = async (file: File) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const token = getToken();
+      const res = await axios.post('/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const uploadedUrl = res.data.imageUrl;
+      form.setFieldsValue({ imageUrl: uploadedUrl });
+      setPreviewUrl(uploadedUrl);
+      message.success('Đã tải hình ảnh từ máy tính lên thành công!');
+    } catch (err: any) {
+      // Fallback read as Base64 Data URL if server endpoint fails
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Url = e.target?.result as string;
+        form.setFieldsValue({ imageUrl: base64Url });
+        setPreviewUrl(base64Url);
+        message.success('Đã tải hình ảnh từ máy tính thành công!');
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -70,6 +110,11 @@ const BannerManager: React.FC = () => {
   };
 
   const handleSubmit = async (values: any) => {
+    if (!values.imageUrl) {
+      message.error('Vui lòng chọn hình ảnh từ máy tính hoặc nhập URL!');
+      return;
+    }
+
     try {
       const token = getToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -177,6 +222,7 @@ const BannerManager: React.FC = () => {
         onOk={() => form.submit()}
         okText={editingBanner ? 'Cập nhật' : 'Thêm mới'}
         cancelText="Hủy"
+        width={580}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
@@ -184,27 +230,106 @@ const BannerManager: React.FC = () => {
             label="Tiêu Đề Banner"
             rules={[{ required: true, message: 'Vui lòng nhập tiêu đề banner!' }]}
           >
-            <Input placeholder="VD: Bom Tấn Mùa Hè 2026" />
+            <Input placeholder="VD: Bom Tấn Mùa Hè 2026" size="large" />
           </Form.Item>
 
-          <Form.Item
-            name="imageUrl"
-            label="URL Hình Ảnh Banner"
-            rules={[{ required: true, message: 'Vui lòng nhập đường dẫn hình ảnh!' }]}
-          >
-            <Input placeholder="https://images.unsplash.com/..." />
+          <Form.Item label="Phương Thức Chọn Ảnh Banner">
+            <Segmented
+              value={uploadMode}
+              onChange={(value) => setUploadMode(value as 'file' | 'url')}
+              options={[
+                { label: '💻 Chọn ảnh từ máy tính', value: 'file', icon: <UploadOutlined /> },
+                { label: '🔗 Nhập URL trực tiếp', value: 'url', icon: <LinkOutlined /> },
+              ]}
+              block
+              style={{ marginBottom: '12px' }}
+            />
+          </Form.Item>
+
+          {/* Mode 1: File Upload from Computer */}
+          {uploadMode === 'file' ? (
+            <Form.Item
+              label="Tập Tin Hình Ảnh Từ Máy Tính *"
+              help="Định dạng hỗ trợ: PNG, JPG, WEBP"
+            >
+              <Upload.Dragger
+                name="image"
+                multiple={false}
+                showUploadList={false}
+                accept="image/*"
+                beforeUpload={(file) => {
+                  handleCustomUpload(file);
+                  return false;
+                }}
+                style={{ padding: '16px', background: '#fafafa', borderRadius: '8px' }}
+              >
+                {uploading ? (
+                  <div style={{ padding: '20px 0' }}>
+                    <Spin tip="Đang tải ảnh lên..." />
+                  </div>
+                ) : previewUrl ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <img
+                      src={previewUrl}
+                      alt="Banner Preview"
+                      style={{
+                        maxHeight: '150px',
+                        maxWidth: '100%',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        marginBottom: '10px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                    <div>
+                      <Button icon={<UploadOutlined />}>Chọn / Thay đổi ảnh khác từ máy tính</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="ant-upload-drag-icon">
+                      <InboxOutlined style={{ fontSize: '36px', color: '#1890ff' }} />
+                    </p>
+                    <p className="ant-upload-text" style={{ fontWeight: 600, fontSize: '15px' }}>
+                      Bấm vào đây hoặc kéo thả ảnh từ máy tính vào đây
+                    </p>
+                    <p className="ant-upload-hint" style={{ color: '#888', fontSize: '13px' }}>
+                      Chọn file hình ảnh từ thư mục máy tính của bạn
+                    </p>
+                  </div>
+                )}
+              </Upload.Dragger>
+            </Form.Item>
+          ) : (
+            /* Mode 2: Direct URL */
+            <Form.Item
+              name="imageUrl"
+              label="URL Hình Ảnh Banner *"
+              rules={[{ required: true, message: 'Vui lòng nhập đường dẫn hình ảnh!' }]}
+            >
+              <Input
+                placeholder="https://images.unsplash.com/..."
+                size="large"
+                onChange={(e) => setPreviewUrl(e.target.value)}
+              />
+            </Form.Item>
+          )}
+
+          {/* Hidden Form Item to store actual imageUrl string */}
+          <Form.Item name="imageUrl" noStyle hidden>
+            <Input />
           </Form.Item>
 
           <Form.Item
             name="linkUrl"
-            label="Đường Dẫn Liên Kết (Link)"
+            label="Đường Dẫn Liên Kết (Link Đích Khi Bấm Vào Banner)"
           >
-            <Input placeholder="VD: /movie hoặc /showtimes" />
+            <Input placeholder="VD: /movie hoặc /showtimes" size="large" />
           </Form.Item>
 
           <Form.Item
             name="isActive"
-            label="Kích Hoạt Hiển Thị"
+            label="Kích Hoạt Hiển Thị Banner"
             valuePropName="checked"
           >
             <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
