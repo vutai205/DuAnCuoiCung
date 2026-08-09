@@ -32,6 +32,17 @@ import BookingPage from "./pages/customer/BookingPage";
 import PaymentSuccessPage from "./pages/customer/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/customer/PaymentFailedPage";
 
+// Helper component to scroll to top automatically on route change
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function HomePage() {
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,6 +147,7 @@ function App() {
 
   return (
     <>
+      <ScrollToTop />
       {showHeaderFooter && <Header />}
 
       <Routes>
