@@ -653,7 +653,7 @@ const BookingPage: React.FC = () => {
             <div className="ticket-success-header">
               <span className="success-icon">🎉</span>
               <h2>ĐẶT VÉ THÀNH CÔNG!</h2>
-              <p>Cảm ơn bạn đã lựa chọn hệ thống VENRI CINEMA</p>
+              <p>Cảm ơn bạn đã lựa chọn hệ thống TNA CINEMA</p>
             </div>
 
             <div className="ticket-details-box">

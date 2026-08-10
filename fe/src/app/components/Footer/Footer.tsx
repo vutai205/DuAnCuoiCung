@@ -25,11 +25,11 @@ export default function Footer() {
       <div className="footer-content">
 
         <p style={{ fontWeight: "bold", fontSize: "1.05rem", color: "#e50914" }}>
-          VENRI CINEMA — Hệ Thống Rạp Chiếu Phim Đẳng Cấp
+          TNA CINEMA — Hệ Thống Rạp Chiếu Phim Đẳng Cấp
         </p>
 
         <p>
-          Bản quyền thuộc Cụm Rạp VENRI CINEMA
+          Bản quyền thuộc Cụm Rạp TNA CINEMA
         </p>
 
         <p>
@@ -37,11 +37,11 @@ export default function Footer() {
         </p>
 
         <p>
-          Hotline CSKH: 1900 6868 - Email hỗ trợ: support@venricinema.com
+          Hotline CSKH: 1900 6868 - Email hỗ trợ: support@tnacinema.com
         </p>
 
         <p>
-          Copyright © 2026 VENRI CINEMA. All rights reserved.
+          Copyright © 2026 TNA CINEMA. All rights reserved.
         </p>
 
       </div>

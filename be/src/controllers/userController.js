@@ -200,6 +200,9 @@ exports.toggleStatus = async (req, res) => {
         const user = await User.findById(req.params.id);
 
         if (user) {
+            if (user.role === 'admin') {
+                return res.status(400).json({ message: 'Không thể khóa tài khoản Quản trị viên!' });
+            }
             user.status = !user.status;
             await user.save();
             res.json({ message: `User status changed to ${user.status ? 'Active' : 'Locked'}` });

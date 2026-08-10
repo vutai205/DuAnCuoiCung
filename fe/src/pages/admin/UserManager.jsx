@@ -156,58 +156,23 @@ const UserManager = () => {
         <div className="container-fluid">
 
             <div className="d-flex justify-content-between align-items-center mb-4">
-
                 <h2>
-
                     Quản lý tài khoản
-
                 </h2>
-
-                <button
-                    className="btn btn-success"
-                    onClick={handleAdd}
-                >
-
-                    + Thêm tài khoản
-
-                </button>
-
             </div>
 
             <SearchUser
-
                 keyword={keyword}
-
                 setKeyword={setKeyword}
-
                 onSearch={handleSearch}
-
                 onReset={loadUsers}
-
             />
 
             <UserTable
-
                 users={users}
-
                 onEdit={handleEdit}
-
                 onDelete={handleDelete}
-
                 onToggleStatus={handleToggle}
-
-            />
-
-            <UserModal
-
-                show={showModal}
-
-                editingUser={editingUser}
-
-                onClose={() => setShowModal(false)}
-
-                onSubmit={handleSave}
-
             />
 
         </div>

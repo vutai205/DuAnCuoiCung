@@ -154,7 +154,7 @@ exports.createBooking = async (req, res) => {
             return res.status(400).json({ message: 'Một hoặc nhiều ghế bạn chọn đã được người khác giữ chỗ. Vui lòng chọn ghế khác!' });
         }
 
-        const ticketCode = `VENRI-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const ticketCode = `TNA-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
         // If paying cash directly at counter: NO 5-minute expiration limit!
         const isCash = paymentMethod === 'cash';

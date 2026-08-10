@@ -57,7 +57,7 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <div className="logo">
-        🎬 Quản Trị VENRI CINEMA
+        🎬 Quản Trị TNA CINEMA
       </div>
 
       <ul>

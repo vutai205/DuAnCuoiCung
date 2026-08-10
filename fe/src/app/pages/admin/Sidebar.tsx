@@ -11,7 +11,7 @@ export default function Sidebar() {
         padding: 20,
       }}
     >
-      <h2 style={{ color: "#fff", marginBottom: 30 }}>VENRI ADMIN</h2>
+      <h2 style={{ color: "#fff", marginBottom: 30 }}>TNA CINEMA ADMIN</h2>
 
       <ul style={{ listStyle: "none", padding: 0, lineHeight: "40px" }}>
         <li><Link to="/admin" style={{ color: "#fff" }}>Dashboard</Link></li>

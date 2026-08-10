@@ -28,7 +28,7 @@ export default function MemberCard() {
             <div>
               <div className="cinema-card">
                 <div className="card-logo" style={{ color: "#fff", fontWeight: "bold", fontSize: "20px" }}>
-                  🎬 VENRI CINEMA
+                  🎬 TNA CINEMA
                 </div>
 
                 <div className="card-qr">
@@ -91,7 +91,7 @@ export default function MemberCard() {
 
               <div className="member-alert">
                 <h4>Thông tin đăng ký thẻ thành viên U22 của bạn đang hoạt động.</h4>
-                <p>Vui lòng xuất trình mã QR thẻ tại quầy vé VENRI CINEMA khi nhận ưu đãi.</p>
+                <p>Vui lòng xuất trình mã QR thẻ tại quầy vé TNA CINEMA khi nhận ưu đãi.</p>
               </div>
             </div>
           </div>

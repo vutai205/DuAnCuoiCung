@@ -176,7 +176,7 @@ const MovieDetailPage: React.FC = () => {
               <div className="showtimes-list-container">
                 {currentDayGroup && currentDayGroup.showtimes.length > 0 ? (
                   <div className="showtimes-room-group">
-                    <div className="room-badge-title">VENRI CINEMA - HÀ NỘI</div>
+                    <div className="room-badge-title">TNA CINEMA - HÀ NỘI</div>
                     <div className="showtime-pills-grid">
                       {currentDayGroup.showtimes.map((st) => (
                         <div

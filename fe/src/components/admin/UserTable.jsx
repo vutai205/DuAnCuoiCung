@@ -185,79 +185,23 @@ const UserTable = ({
 
                                             </td>
 
-                                            <td>
-
-                                                <div className="d-flex gap-2">
-
+                                            <td className="text-center">
+                                                {user.role === "admin" ? (
+                                                    <span className="badge bg-secondary text-wrap" style={{ opacity: 0.8, fontSize: '0.8rem' }}>
+                                                        Tài khoản hệ thống
+                                                    </span>
+                                                ) : (
                                                     <button
-
-                                                        className="btn btn-warning btn-sm"
-
-                                                        onClick={() => onEdit(user)}
-
-                                                    >
-
-                                                        Sửa
-
-                                                    </button>
-
-                                                    <button
-
-                                                        className="btn btn-danger btn-sm"
-
-                                                        onClick={() => {
-
-                                                            if (
-
-                                                                window.confirm(
-                                                                    "Bạn có chắc muốn xóa tài khoản này?"
-                                                                )
-                                                            ) {
-
-                                                                onDelete(user._id);
-
-                                                            }
-
-                                                        }}
-
-                                                    >
-
-                                                        Xóa
-
-                                                    </button>
-
-                                                    <button
-
                                                         className={
                                                             user.status !== false
-                                                                ? "btn btn-secondary btn-sm"
-                                                                : "btn btn-success btn-sm"
+                                                                ? "btn btn-dark btn-sm px-3"
+                                                                : "btn btn-success btn-sm px-3"
                                                         }
-
-                                                        onClick={() =>
-                                                            onToggleStatus(user._id)
-                                                        }
-
+                                                        onClick={() => onToggleStatus(user._id)}
                                                     >
-
-                                                        {
-
-                                                            user.status !== false
-
-                                                                ?
-
-                                                                "Khóa"
-
-                                                                :
-
-                                                                "Mở"
-
-                                                        }
-
+                                                        {user.status !== false ? "Khóa" : "Mở khóa"}
                                                     </button>
-
-                                                </div>
-
+                                                )}
                                             </td>
 
                                         </tr>
