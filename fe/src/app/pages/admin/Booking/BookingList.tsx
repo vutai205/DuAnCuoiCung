@@ -328,10 +328,10 @@ export default function BookingList() {
     {
       title: "Ghế",
       dataIndex: "seats",
-      width: 75,
+      width: 110,
       align: "center" as const,
       render: (seats: string[]) => (
-        <div style={{ whiteSpace: "nowrap" }}>
+        <div style={{ wordBreak: "break-word", whiteSpace: "normal" }}>
           <strong style={{ color: "#ff9800" }}>{seats?.join(", ")}</strong>
         </div>
       ),
@@ -339,7 +339,7 @@ export default function BookingList() {
     {
       title: "Tổng tiền",
       dataIndex: "totalPrice",
-      width: 105,
+      width: 110,
       align: "right" as const,
       render: (value: number) => (
         <div style={{ whiteSpace: "nowrap", fontWeight: 600 }}>
@@ -508,6 +508,7 @@ export default function BookingList() {
         dataSource={filtered}
         loading={loading}
         pagination={{ pageSize: 8 }}
+        scroll={{ x: 1000 }}
       />
 
       {/* Live Camera Scanner Modal */}

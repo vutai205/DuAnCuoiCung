@@ -15,17 +15,29 @@ const Dashboard = () => {
         const fetchDashboardData = async () => {
             try {
                 const token = localStorage.getItem("token") || JSON.parse(localStorage.getItem("user") || "{}").token;
-                const config = {
+                const config = token ? {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                };
+                } : {};
 
-                const statsRes = await axios.get("/api/bookings/stats", config);
-                setStats(statsRes.data);
+                const [statsRes, bookingsRes] = await Promise.all([
+                    axios.get("/api/bookings/stats", config).catch(err => {
+                        console.error("Stats API error:", err);
+                        return { data: null };
+                    }),
+                    axios.get("/api/bookings", config).catch(err => {
+                        console.error("Bookings API error:", err);
+                        return { data: [] };
+                    })
+                ]);
 
-                const bookingsRes = await axios.get("/api/bookings", config);
-                setRecentBookings(bookingsRes.data.slice(0, 5));
+                if (statsRes.data) {
+                    setStats(statsRes.data);
+                }
+                if (Array.isArray(bookingsRes.data)) {
+                    setRecentBookings(bookingsRes.data.slice(0, 5));
+                }
             } catch (err) {
                 console.error("Lỗi khi tải dữ liệu tổng quan:", err);
             }
