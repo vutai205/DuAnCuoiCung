@@ -143,7 +143,59 @@ const Rooms: React.FC = () => {
     }
   };
 
-  // Seat layout visual editor actions
+  // Generate layout preset on frontend based on selected room template
+  const applyPresetTemplate = (presetType: string) => {
+    let rows = activeRoomForLayout?.rowsCount || 8;
+    let cols = activeRoomForLayout?.seatsPerRow || 10;
+
+    if (presetType === 'imax') {
+      rows = 10;
+      cols = 12;
+    } else if (presetType === '4dx') {
+      rows = 6;
+      cols = 8;
+    } else if (presetType === 'sweetbox') {
+      rows = 6;
+      cols = 10;
+    }
+
+    const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+    const actualRows = Math.min(rows, rowsLetters.length);
+    const newLayout: SeatItem[] = [];
+
+    for (let i = 0; i < actualRows; i++) {
+      let seatType = 'regular';
+      if (presetType === 'sweetbox') {
+        seatType = 'couple';
+      } else if (presetType === 'vip') {
+        seatType = i === actualRows - 1 && actualRows > 2 ? 'couple' : 'vip';
+      } else if (presetType === 'imax') {
+        if (i < 2) seatType = 'regular';
+        else if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
+        else seatType = 'vip';
+      } else if (presetType === '4dx') {
+        if (i < 1) seatType = 'regular';
+        else if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
+        else seatType = 'vip';
+      } else {
+        // 2D Standard
+        if (i >= 2 && i < actualRows - 1) seatType = 'vip';
+        if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
+      }
+
+      for (let j = 1; j <= cols; j++) {
+        newLayout.push({
+          seatName: `${rowsLetters[i]}${j}`,
+          type: seatType,
+          status: 'active'
+        });
+      }
+    }
+
+    setCurrentSeatLayout(newLayout);
+    message.success(`⚡ Đã áp dụng sơ đồ ghế mẫu: ${presetType.toUpperCase()}! Bạn có thể tùy chỉnh lại từng ghế trước khi Lưu.`);
+  };
+
   const handleSeatClick = (seatName: string) => {
     setCurrentSeatLayout(prev =>
       prev.map(s => {
@@ -395,6 +447,33 @@ const Rooms: React.FC = () => {
         ]}
       >
         <div style={{ background: '#0b0f19', padding: '20px', borderRadius: '12px', color: '#fff' }}>
+          {/* Preset Layout Template Selection Bar */}
+          <div style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', padding: '12px 16px', borderRadius: '8px', marginBottom: '16px', border: '1px solid #4338ca', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontWeight: 'bold', color: '#c7d2fe', fontSize: '0.9rem' }}>🎯 NẠP SƠ ĐỒ MẪU THEO LOẠI PHÒNG:</span>
+              <Space wrap>
+                <Button size="small" type="primary" style={{ background: '#2563eb' }} onClick={() => applyPresetTemplate('standard')}>
+                  🎬 2D Standard
+                </Button>
+                <Button size="small" type="primary" style={{ background: '#d97706' }} onClick={() => applyPresetTemplate('vip')}>
+                  ⭐ VIP Luxury
+                </Button>
+                <Button size="small" type="primary" style={{ background: '#7c3aed' }} onClick={() => applyPresetTemplate('imax')}>
+                  🌌 IMAX 3D (10x12)
+                </Button>
+                <Button size="small" type="primary" style={{ background: '#0284c7' }} onClick={() => applyPresetTemplate('4dx')}>
+                  ⚡ 4DX Motion (6x8)
+                </Button>
+                <Button size="small" type="primary" style={{ background: '#db2777' }} onClick={() => applyPresetTemplate('sweetbox')}>
+                  💕 Sweetbox Đôi
+                </Button>
+              </Space>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#a5b4fc' }}>
+              💡 *Nạp nhanh sơ đồ mẫu, sau đó tự do chỉnh sửa từng ghế*
+            </div>
+          </div>
+
           {/* Cài đặt chế độ chọn (Brush palette) */}
           <div style={{ background: '#1e293b', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>

@@ -28,6 +28,67 @@ exports.getRoomById = async (req, res) => {
     }
 };
 
+// Helper: Tạo sơ đồ ghế theo loại phòng chiếu (Preset Template)
+const generateLayoutByType = (type = '2D Standard', actualRows = 8, actualCols = 10, reqTotalSeats = null) => {
+    const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+    const totalSeats = reqTotalSeats || (actualRows * actualCols);
+    const seatLayout = [];
+    let currentCount = 0;
+
+    const cleanType = (type || '').toLowerCase();
+
+    for (let i = 0; i < actualRows; i++) {
+        let seatType = 'regular';
+
+        if (cleanType.includes('sweetbox') || cleanType.includes('đôi') || cleanType.includes('couple')) {
+            // Phòng Đôi Sweetbox: 100% ghế đôi
+            seatType = 'couple';
+        } else if (cleanType.includes('vip')) {
+            // Phòng VIP: Toàn bộ hàng ghế là VIP, hàng cuối là ghế đôi cao cấp
+            if (i === actualRows - 1 && actualRows > 2) {
+                seatType = 'couple';
+            } else {
+                seatType = 'vip';
+            }
+        } else if (cleanType.includes('imax')) {
+            // Phòng IMAX 3D: 2 hàng đầu Regular, khu giữa góc nhìn đỉnh là VIP, hàng cuối là Couple
+            if (i < 2) {
+                seatType = 'regular';
+            } else if (i === actualRows - 1 && actualRows > 3) {
+                seatType = 'couple';
+            } else {
+                seatType = 'vip';
+            }
+        } else if (cleanType.includes('4dx')) {
+            // Phòng 4DX: 1 hàng đầu Regular, các hàng giữa 4DX Motion VIP, hàng cuối Couple
+            if (i < 1) {
+                seatType = 'regular';
+            } else if (i === actualRows - 1 && actualRows > 3) {
+                seatType = 'couple';
+            } else {
+                seatType = 'vip';
+            }
+        } else {
+            // 2D Standard tiêu chuẩn: Hàng A-B (Regular), Hàng C-G (VIP), Hàng H (Couple)
+            if (i >= 2 && i < actualRows - 1) seatType = 'vip';
+            if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
+        }
+
+        for (let j = 1; j <= actualCols; j++) {
+            if (currentCount < totalSeats) {
+                seatLayout.push({
+                    seatName: `${rowsLetters[i]}${j}`,
+                    type: seatType,
+                    status: 'active'
+                });
+                currentCount++;
+            }
+        }
+    }
+
+    return seatLayout;
+};
+
 // @desc    Create a room (Auto-generate seats)
 // @route   POST /api/rooms
 // @access  Private/Admin
@@ -40,25 +101,8 @@ exports.createRoom = async (req, res) => {
         const actualCols = seatsPerRow || 10;
         const totalSeats = reqSeats || (actualRows * actualCols);
 
-        const seatLayout = [];
-        let currentSeatCount = 0;
-
-        for (let i = 0; i < actualRows; i++) {
-            let seatType = 'regular';
-            if (i >= 2 && i < actualRows - 1) seatType = 'vip';
-            if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
-
-            for (let j = 1; j <= actualCols; j++) {
-                if (currentSeatCount < totalSeats) {
-                    seatLayout.push({
-                        seatName: `${rowsLetters[i]}${j}`,
-                        type: seatType,
-                        status: 'active'
-                    });
-                    currentSeatCount++;
-                }
-            }
-        }
+        // Sinh sơ đồ ghế mẫu mặc định theo loại phòng
+        const seatLayout = generateLayoutByType(type, actualRows, actualCols, totalSeats);
 
         const room = new Room({
             name,
@@ -99,7 +143,7 @@ exports.updateRoom = async (req, res) => {
             (req.body.seatsPerRow && req.body.seatsPerRow !== room.seatsPerRow) ||
             (req.body.totalSeats && req.body.totalSeats !== room.totalSeats)
         ) {
-            // Regenerate layout if dimensions changed
+            // Regenerate layout if dimensions changed using room type template
             const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
             const newRows = req.body.rowsCount || room.rowsCount || 8;
             const newCols = req.body.seatsPerRow || room.seatsPerRow || 10;
@@ -109,26 +153,7 @@ exports.updateRoom = async (req, res) => {
             room.rowsCount = actualRows;
             room.seatsPerRow = newCols;
             room.totalSeats = totalSeats;
-
-            const seatLayout = [];
-            let currentSeatCount = 0;
-            for (let i = 0; i < actualRows; i++) {
-                let seatType = 'regular';
-                if (i >= 2 && i < actualRows - 1) seatType = 'vip';
-                if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
-
-                for (let j = 1; j <= newCols; j++) {
-                    if (currentSeatCount < totalSeats) {
-                        seatLayout.push({
-                            seatName: `${rowsLetters[i]}${j}`,
-                            type: seatType,
-                            status: 'active'
-                        });
-                        currentSeatCount++;
-                    }
-                }
-            }
-            room.seatLayout = seatLayout;
+            room.seatLayout = generateLayoutByType(room.type, actualRows, newCols, totalSeats);
         }
 
         const updatedRoom = await room.save();
