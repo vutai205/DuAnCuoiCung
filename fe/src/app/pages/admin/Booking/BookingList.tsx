@@ -15,6 +15,7 @@ import {
   Tooltip,
   Dropdown,
 } from "antd";
+import { PrinterOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import axios from "axios";
 import { Html5Qrcode } from "html5-qrcode";
@@ -64,6 +65,9 @@ export default function BookingList() {
   const [detail, setDetail] = useState<Booking | null>(null);
   const [printing, setPrinting] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+
+  // Single item print target (null = print all stubs)
+  const [printTargetItem, setPrintTargetItem] = useState<any | null>(null);
 
   // Cancel Check-in states
   const [cancelCheckinModalOpen, setCancelCheckinModalOpen] = useState(false);
@@ -161,6 +165,57 @@ export default function BookingList() {
     }
   };
 
+  // Build array of individual ticket & combo stubs for a booking
+  const getBookingTicketStubs = (booking: Booking) => {
+    if (!booking) return [];
+    const stubs: any[] = [];
+
+    const totalComboPrice = (booking.combos || []).reduce((sum, c) => sum + (c.price * c.count), 0);
+    const totalSeatPrice = Math.max(0, booking.totalPrice - totalComboPrice);
+    const seatCount = booking.seats?.length || 1;
+    const perSeatPrice = Math.round(totalSeatPrice / seatCount);
+
+    // 1. Seat ticket stubs (Each seat is a separate ticket stub)
+    (booking.seats || []).forEach((seatName) => {
+      stubs.push({
+        id: `seat_${seatName}`,
+        subCode: seatName,
+        type: 'seat',
+        icon: '🎟️',
+        title: `Vé Ghế Xem Phim - Ghế ${seatName}`,
+        seatName: seatName,
+        movieTitle: booking.showtime?.movie?.title || 'Phim chiếu tại rạp',
+        roomName: booking.showtime?.room?.name || 'Phòng chiếu',
+        startTime: booking.showtime?.startTime,
+        price: perSeatPrice,
+        customerName: booking.user?.name || 'Khách vãng lai',
+        customerPhone: booking.user?.phone || 'Chưa cập nhật',
+        ticketCode: booking.ticketCode || booking._id.slice(-8).toUpperCase()
+      });
+    });
+
+    // 2. Combo food vouchers (Each combo item is a separate food voucher)
+    (booking.combos || []).forEach((combo, cIdx) => {
+      for (let i = 1; i <= combo.count; i++) {
+        stubs.push({
+          id: `combo_${cIdx}_${i}`,
+          subCode: `F&B-${cIdx + 1}.${i}`,
+          type: 'combo',
+          icon: '🍿',
+          title: `Phiếu Bỏng Nước: ${combo.name} (${i}/${combo.count})`,
+          comboName: combo.name,
+          price: combo.price,
+          customerName: booking.user?.name || 'Khách vãng lai',
+          customerPhone: booking.user?.phone || 'Chưa cập nhật',
+          ticketCode: booking.ticketCode || booking._id.slice(-8).toUpperCase()
+        });
+      }
+    });
+
+    return stubs;
+  };
+
+  // Print all ticket stubs together
   const handlePrintTicket = async (record: Booking) => {
     const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
     if (isUnpaidVnpay) {
@@ -173,10 +228,11 @@ export default function BookingList() {
       return;
     }
 
+    setPrintTargetItem(null); // Null means print all stubs
     setPrinting(true);
     try {
       const res = await axios.put(`/api/bookings/${record._id}/print`, {}, getHeaders());
-      message.success("In vé thành công!");
+      message.success("Đã xác nhận in TẤT CẢ vé & phiếu cho khách thành công!");
       
       const updatedBooking = res.data.booking;
       loadBookings();
@@ -184,7 +240,6 @@ export default function BookingList() {
         setDetail(updatedBooking);
       }
 
-      // Trigger browser print window for actual printing
       setTimeout(() => {
         window.print();
       }, 500);
@@ -194,6 +249,38 @@ export default function BookingList() {
       } else {
         message.error(err.response?.data?.message || "Lỗi khi thực hiện in vé!");
       }
+    } finally {
+      setPrinting(false);
+    }
+  };
+
+  // Print single individual ticket/combo stub
+  const handlePrintSingleItem = async (record: Booking, stubItem: any) => {
+    const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
+    if (isUnpaidVnpay) {
+      message.error("⚠️ Khách chưa hoàn tất thanh toán VNPay Online! Không thể in vé.");
+      return;
+    }
+
+    setPrintTargetItem(stubItem);
+    setPrinting(true);
+    try {
+      const res = await axios.put(`/api/bookings/${record._id}/print`, {}, getHeaders());
+      message.success(`Đã in hóa đơn/cuống lẻ: ${stubItem.title}!`);
+      
+      const updatedBooking = res.data.booking;
+      loadBookings();
+      if (detail && detail._id === record._id) {
+        setDetail(updatedBooking);
+      }
+
+      setTimeout(() => {
+        window.print();
+        setPrintTargetItem(null);
+      }, 500);
+    } catch (err: any) {
+      message.error(err.response?.data?.message || "Lỗi khi in cuống vé lẻ!");
+      setPrintTargetItem(null);
     } finally {
       setPrinting(false);
     }
@@ -397,7 +484,7 @@ export default function BookingList() {
         const menuItems: MenuProps['items'] = [
           {
             key: 'print',
-            label: record.isPrinted ? "🖨️ Vé đã được in" : isUnpaidVnpay ? "🔒 Chưa thanh toán VNPay" : "🖨️ In vé xem phim",
+            label: record.isPrinted ? "🖨️ Vé đã được in" : isUnpaidVnpay ? "🔒 Chưa thanh toán VNPay" : "🖨️ In tất cả vé xem phim",
             disabled: record.isPrinted || record.status === "cancelled" || isUnpaidVnpay,
           },
           {
@@ -538,17 +625,18 @@ export default function BookingList() {
         </div>
       </Modal>
 
-      {/* Ticket Inspection & Print Modal - Perfectly Centered */}
+      {/* Ticket Inspection & Print Modal - Tách từng cuống vé lẻ */}
       <Modal
         open={!!detail}
         centered={true}
         footer={null}
-        title="🎫 CHI TIẾT VÉ XEM PHIM & QUÉT MÃ QR"
-        width={650}
+        title="🎫 CHI TIẾT ĐƠN VÉ & DANH SÁCH CUỐNG VÉ LẺ"
+        width={720}
         onCancel={() => setDetail(null)}
       >
         {detail && (() => {
           const isUnpaidVnpay = (detail.paymentMethod === 'vnpay' || !detail.paymentMethod) && detail.paymentStatus !== 'paid' && detail.status === 'pending';
+          const ticketStubs = getBookingTicketStubs(detail);
 
           return (
             <div>
@@ -572,7 +660,7 @@ export default function BookingList() {
               ) : (
                 <Alert
                   message="✅ VÉ HỢP LỆ - CHƯA IN"
-                  description="Khách hàng có thể thực hiện in vé giấy tại quầy lần đầu."
+                  description="Khách hàng có thể thực hiện in vé lẻ từng ghế/bỏn nước hoặc in tất cả lần đầu."
                   type="success"
                   showIcon
                   style={{ marginBottom: 16 }}
@@ -580,7 +668,7 @@ export default function BookingList() {
               )}
 
               <div style={{ display: "flex", gap: 20, alignItems: "center", marginBottom: 20 }}>
-                {/* Standardized 174x174 Media Box for both cases */}
+                {/* QR Code Container */}
                 <div style={{
                   width: 174,
                   height: 174,
@@ -625,31 +713,13 @@ export default function BookingList() {
                   <strong>{detail.showtime?.room?.name || "N/A"}</strong> - {detail.showtime?.startTime ? new Date(detail.showtime.startTime).toLocaleString("vi-VN") : "N/A"}
                 </Descriptions.Item>
 
-                <Descriptions.Item label="Ghế đã chọn">
-                  <strong style={{ color: "#e50914", fontSize: "1.1rem" }}>{detail.seats?.join(", ")}</strong>
-                </Descriptions.Item>
-
-                {detail.combos && detail.combos.length > 0 && (
-                  <Descriptions.Item label="Combo đồ ăn">
-                    {detail.combos.map((c, idx) => (
-                      <Tag key={idx} color="orange">{c.name} (x{c.count})</Tag>
-                    ))}
-                  </Descriptions.Item>
-                )}
-
-                <Descriptions.Item label="Tổng tiền thanh toán">
+                <Descriptions.Item label="Tổng tiền đơn hàng">
                   <strong style={{ color: "#52c41a", fontSize: "1.2rem" }}>{detail.totalPrice?.toLocaleString("vi-VN")} đ</strong>
                 </Descriptions.Item>
 
                 <Descriptions.Item label="Phương thức thanh toán">
                   <Tag color={detail.paymentMethod === 'cash' ? 'cyan' : 'blue'}>
                     {detail.paymentMethod === 'cash' ? '💵 Thanh toán tại quầy' : '💳 Thanh toán VNPay Online'}
-                  </Tag>
-                </Descriptions.Item>
-
-                <Descriptions.Item label="Trạng thái đơn hàng">
-                  <Tag color={detail.status === "confirmed" ? "green" : detail.status === "cancelled" ? "red" : isUnpaidVnpay ? "volcano" : "orange"}>
-                    {detail.status === "confirmed" ? "Đã thanh toán" : detail.status === "cancelled" ? "Đã hủy" : isUnpaidVnpay ? "Chờ khách thanh toán VNPay" : "Chờ xử lý"}
                   </Tag>
                 </Descriptions.Item>
 
@@ -668,16 +738,84 @@ export default function BookingList() {
                     <Tag color="blue">Chưa Check-in</Tag>
                   )}
                 </Descriptions.Item>
-
-                <Descriptions.Item label="Trạng thái In vé">
-                  {detail.isPrinted ? (
-                    <Tag color="purple">Đã in vé lúc: {new Date(detail.printedAt!).toLocaleString("vi-VN")}</Tag>
-                  ) : (
-                    <Tag color="default">Chưa in vé</Tag>
-                  )}
-                </Descriptions.Item>
               </Descriptions>
 
+              {/* TÁCH CHI TIẾT TỪNG CUỐNG VÉ & PHIẾU ĐỒ ĂN LẺ (MỖI DÒNG 1 NÚT IN) */}
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h4 style={{ margin: 0, color: '#1890ff', fontSize: '1rem', fontWeight: 'bold' }}>
+                    📑 DANH SÁCH CUỐNG VÉ & PHIẾU ĐỒ ĂN LẺ ({ticketStubs.length} VÉ)
+                  </h4>
+                  <Tag color="purple">Tách riêng từng cuống vé</Tag>
+                </div>
+
+                <Table
+                  size="small"
+                  pagination={false}
+                  dataSource={ticketStubs}
+                  rowKey="id"
+                  bordered
+                  columns={[
+                    {
+                      title: "Loại Cuống Vé / Hóa Đơn Lẻ",
+                      key: "title",
+                      render: (_, stub) => (
+                        <div>
+                          <div style={{ fontWeight: "bold", color: stub.type === 'combo' ? '#d46b08' : '#e50914' }}>
+                            {stub.icon} {stub.title}
+                          </div>
+                          <div style={{ fontSize: "0.78rem", color: "#666" }}>
+                            Mã vé lẻ: <code>#{stub.ticketCode}-{stub.subCode}</code>
+                          </div>
+                        </div>
+                      )
+                    },
+                    {
+                      title: "Chi tiết",
+                      key: "info",
+                      render: (_, stub) => (
+                        <div style={{ fontSize: "0.85rem" }}>
+                          {stub.type === 'seat' ? (
+                            <span>Phòng: <strong>{stub.roomName}</strong> | Ghế: <strong style={{ color: "#e50914" }}>{stub.seatName}</strong></span>
+                          ) : (
+                            <Tag color="orange">🍿 Phiếu quầy Bỏng Nước F&B</Tag>
+                          )}
+                        </div>
+                      )
+                    },
+                    {
+                      title: "Giá vé",
+                      dataIndex: "price",
+                      width: 105,
+                      align: "right" as const,
+                      render: (val: number) => <strong style={{ color: "#52c41a" }}>{val.toLocaleString('vi-VN')} đ</strong>
+                    },
+                    {
+                      title: "Thao tác In",
+                      key: "action",
+                      width: 130,
+                      align: "center" as const,
+                      render: (_, stub) => (
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<PrinterOutlined />}
+                          style={{
+                            backgroundColor: stub.type === 'combo' ? '#fa8c16' : '#1890ff',
+                            borderColor: stub.type === 'combo' ? '#fa8c16' : '#1890ff'
+                          }}
+                          disabled={detail.isPrinted || detail.status === "cancelled" || isUnpaidVnpay}
+                          onClick={() => handlePrintSingleItem(detail, stub)}
+                        >
+                          🖨️ In vé này
+                        </Button>
+                      )
+                    }
+                  ]}
+                />
+              </div>
+
+              {/* Nút In TẤT CẢ vé ở cuối modal */}
               <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
                 <Button
                   type="primary"
@@ -686,7 +824,7 @@ export default function BookingList() {
                   disabled={detail.isPrinted || detail.status === "cancelled" || isUnpaidVnpay}
                   style={{
                     height: 44,
-                    minWidth: 260,
+                    minWidth: 280,
                     fontSize: "0.95rem",
                     fontWeight: 600,
                     borderRadius: 8,
@@ -695,7 +833,7 @@ export default function BookingList() {
                   }}
                   onClick={() => handlePrintTicket(detail)}
                 >
-                  {isUnpaidVnpay ? "🔒 Khách chưa thanh toán (Khóa in)" : detail.isPrinted ? "⚠️ Vé đã được in (Khóa in)" : "🖨️ Xác nhận In vé cho khách"}
+                  {isUnpaidVnpay ? "🔒 Khách chưa thanh toán (Khóa in)" : detail.isPrinted ? "⚠️ Vé đã được in (Khóa in)" : `🖨️ In TẤT CẢ ${ticketStubs.length} cuống vé cho khách`}
                 </Button>
               </div>
             </div>
@@ -731,7 +869,7 @@ export default function BookingList() {
               type="warning"
               showIcon
               message="Yêu cầu nhập/chọn lý do Hủy Check-in"
-              description={`Vé #${selectedBookingForCancel.ticketCode || selectedBookingForCancel._id.substring(selectedBookingForCancel._id.length - 8).toUpperCase()} - Khách: ${selectedBookingForCancel.user?.name || "Khách vãng lai"}. Hệ thống sẽ lưu vết lý do hủy vào nhật ký!` }
+              description={`Vé #${selectedBookingForCancel.ticketCode || selectedBookingForCancel._id.substring(selectedBookingForCancel._id.length - 8).toUpperCase()} - Khách: ${selectedBookingForCancel.user?.name || "Khách vãng lai"}. Hệ thống sẽ lưu vết lý do hủy vào nhật ký!`}
             />
 
             <div>
@@ -761,6 +899,120 @@ export default function BookingList() {
           </div>
         )}
       </Modal>
+
+      {/* Printable Thermal Receipt Stubs (hidden on screen, visible on print) */}
+      <div id="printable-ticket-section">
+        {detail && (() => {
+          const allStubs = getBookingTicketStubs(detail);
+          const stubsToPrint = printTargetItem ? [printTargetItem] : allStubs;
+
+          return stubsToPrint.map((stub, idx) => (
+            <div key={stub.id || idx} className="thermal-ticket-stub">
+              <div className="stub-header">
+                <h2>🎬 TNA CINEMA 🎬</h2>
+                <p style={{ fontWeight: 'bold' }}>{stub.type === 'seat' ? 'VÉ XEM PHIM CHI TIẾT' : 'PHIẾU ĐỒ ĂN NƯỚC UỐNG'}</p>
+                <div className="divider-line" />
+              </div>
+
+              <div className="stub-body">
+                <p className="stub-code"><strong>MÃ CUỐNG VÉ:</strong> #{stub.ticketCode}-{stub.subCode}</p>
+                
+                {stub.type === 'seat' ? (
+                  <>
+                    <p><strong>Phim:</strong> {stub.movieTitle}</p>
+                    <p><strong>Phòng chiếu:</strong> {stub.roomName}</p>
+                    <p><strong>Suất chiếu:</strong> {stub.startTime ? new Date(stub.startTime).toLocaleString('vi-VN') : 'N/A'}</p>
+                    <p className="highlight-seat"><strong>VỊ TRÍ GHẾ:</strong> {stub.seatName}</p>
+                    <p><strong>Giá vé:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="highlight-combo"><strong>SẢN PHẨM:</strong> {stub.comboName}</p>
+                    <p><strong>Giá tiền:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
+                    <p style={{ fontSize: '11px', color: '#555' }}>* Trình phiếu này tại quầy F&B để nhận đồ ăn *</p>
+                  </>
+                )}
+
+                <div className="divider-line" />
+                <p><strong>Khách hàng:</strong> {stub.customerName}</p>
+                <p><strong>SĐT:</strong> {stub.customerPhone}</p>
+                <p><strong>Thời gian in:</strong> {new Date().toLocaleString('vi-VN')}</p>
+                
+                <div className="stub-qr">
+                  <QRCode value={`${stub.ticketCode}-${stub.subCode}`} size={120} />
+                </div>
+              </div>
+
+              <div className="stub-footer">
+                <p>Cảm ơn & chúc quý khách xem phim vui vẻ!</p>
+                <p>www.tnacinema.vn - Hotline: 1900 xxxx</p>
+              </div>
+            </div>
+          ));
+        })()}
+      </div>
+
+      <style>{`
+        @media screen {
+          #printable-ticket-section {
+            display: none !important;
+          }
+        }
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-ticket-section, #printable-ticket-section * {
+            visibility: visible !important;
+          }
+          #printable-ticket-section {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            display: block !important;
+          }
+          .thermal-ticket-stub {
+            width: 80mm;
+            margin: 0 auto 30px auto;
+            padding: 15px;
+            border: 1px dashed #000;
+            font-family: 'Courier New', Courier, monospace;
+            page-break-after: always;
+            break-after: page;
+            text-align: center;
+            background: #fff;
+            color: #000;
+          }
+          .thermal-ticket-stub h2 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+          }
+          .thermal-ticket-stub p {
+            margin: 3px 0;
+            font-size: 13px;
+          }
+          .divider-line {
+            border-bottom: 1px dashed #000;
+            margin: 8px 0;
+          }
+          .highlight-seat {
+            font-size: 16px !important;
+            font-weight: bold;
+            margin: 6px 0 !important;
+          }
+          .highlight-combo {
+            font-size: 15px !important;
+            font-weight: bold;
+            margin: 6px 0 !important;
+          }
+          .stub-qr {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+          }
+        }
+      `}</style>
     </Card>
   );
 }
