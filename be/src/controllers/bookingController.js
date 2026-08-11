@@ -134,7 +134,7 @@ exports.createBooking = async (req, res) => {
         // Check active pending booking
         const now = new Date();
 
-        // Prevent Double Booking from other users
+        // Prevent Double Booking from OTHER users
         const existingBookings = await Booking.find({
             showtime: showtimeId,
             status: { $ne: 'cancelled' },
@@ -144,37 +144,59 @@ exports.createBooking = async (req, res) => {
             ]
         });
 
-        let allBookedSeats = [];
-        existingBookings.forEach(b => {
-            allBookedSeats = allBookedSeats.concat(b.seats);
+        // Filter out bookings by OTHER users vs SAME user
+        const otherUserBookings = existingBookings.filter(
+            b => b.user.toString() !== userId.toString()
+        );
+
+        let otherUserSeats = [];
+        otherUserBookings.forEach(b => {
+            otherUserSeats = otherUserSeats.concat(b.seats);
         });
 
-        const isSeatTaken = seats.some(seat => allBookedSeats.includes(seat));
-        if (isSeatTaken) {
+        const isSeatTakenByOther = seats.some(seat => otherUserSeats.includes(seat));
+        if (isSeatTakenByOther) {
             return res.status(400).json({ message: 'Một hoặc nhiều ghế bạn chọn đã được người khác giữ chỗ. Vui lòng chọn ghế khác!' });
         }
 
-        const ticketCode = `TNA-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        // If the SAME user already has an active pending booking for this showtime, reuse/update it instead of throwing duplicate error!
+        const existingSameUserPending = existingBookings.find(
+            b => b.user.toString() === userId.toString() && b.status === 'pending'
+        );
 
-        // If paying cash directly at counter: NO 5-minute expiration limit!
         const isCash = paymentMethod === 'cash';
         const expiresAt = isCash ? null : new Date(now.getTime() + 5 * 60 * 1000);
         const bookingStatus = isCash ? 'confirmed' : 'pending';
 
-        const booking = await Booking.create({
-            user: userId,
-            showtime: showtimeId,
-            seats,
-            combos: combos || [],
-            totalPrice: reqPrice,
-            voucherCode: voucherCode || null,
-            discountAmount: Number(discountAmount) || 0,
-            ticketCode,
-            paymentMethod,
-            expiresAt,
-            status: bookingStatus,
-            paymentStatus: 'unpaid'
-        });
+        let booking;
+        if (existingSameUserPending) {
+            existingSameUserPending.seats = seats;
+            existingSameUserPending.combos = combos || [];
+            existingSameUserPending.totalPrice = reqPrice;
+            existingSameUserPending.voucherCode = voucherCode || null;
+            existingSameUserPending.discountAmount = Number(discountAmount) || 0;
+            existingSameUserPending.paymentMethod = paymentMethod;
+            existingSameUserPending.expiresAt = expiresAt;
+            existingSameUserPending.status = bookingStatus;
+
+            booking = await existingSameUserPending.save();
+        } else {
+            const ticketCode = `TNA-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            booking = await Booking.create({
+                user: userId,
+                showtime: showtimeId,
+                seats,
+                combos: combos || [],
+                totalPrice: reqPrice,
+                voucherCode: voucherCode || null,
+                discountAmount: Number(discountAmount) || 0,
+                ticketCode,
+                paymentMethod,
+                expiresAt,
+                status: bookingStatus,
+                paymentStatus: 'unpaid'
+            });
+        }
 
         // Increment voucher usage count if valid voucher code was provided
         if (voucherCode) {

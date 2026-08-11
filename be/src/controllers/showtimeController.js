@@ -79,8 +79,16 @@ exports.getShowtimeSeats = async (req, res) => {
 
         const seatLayout = showtime.room.seatLayout; // Mảng tất cả các ghế trong phòng
 
-        // 2. Lấy tất cả các ghế đã được đặt trong suất chiếu này
-        const bookings = await Booking.find({ showtime: showtimeId, status: { $ne: 'cancelled' } });
+        // 2. Lấy tất cả các ghế đã được đặt trong suất chiếu này (Loại trừ các đơn hết hạn 5p)
+        const now = new Date();
+        const bookings = await Booking.find({ 
+            showtime: showtimeId, 
+            status: { $ne: 'cancelled' },
+            $or: [
+                { paymentMethod: 'cash' },
+                { expiresAt: { $gt: now } }
+            ]
+        });
         
         let bookedSeats = [];
         bookings.forEach(booking => {

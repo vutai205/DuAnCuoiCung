@@ -133,6 +133,19 @@ const BookingPage: React.FC = () => {
     };
 
     if (showtimeId) fetchSeatLayout();
+
+    // Auto-refresh seat layout every 5 seconds to get real-time seat locks
+    const pollInterval = setInterval(() => {
+      if (showtimeId) {
+        axios.get(`/api/showtimes/${showtimeId}/seats`).then(res => {
+          if (res.data && res.data.seats) {
+            setShowtimeData(prev => prev ? { ...prev, seats: res.data.seats } : null);
+          }
+        }).catch(err => console.error("Error polling seats:", err));
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
   }, [showtimeId]);
 
   // Timer countdown

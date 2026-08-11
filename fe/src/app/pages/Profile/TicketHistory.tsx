@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { QRCode, Tag, message } from "antd";
-import { useNavigate } from "react-router-dom";
 import "./TicketHistory.css";
 
 export default function TicketHistory() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
-  const navigate = useNavigate();
 
   const fetchTickets = async () => {
     setLoading(true);
@@ -31,14 +29,31 @@ export default function TicketHistory() {
     fetchTickets();
   }, []);
 
-  const handlePayNow = (ticket: any) => {
+  const handlePayNow = async (ticket: any) => {
     const expiresAt = ticket.expiresAt ? new Date(ticket.expiresAt).getTime() : 0;
     if (expiresAt && expiresAt < Date.now()) {
       message.error("Thời gian giữ chỗ 5 phút cho vé này đã hết hạn!");
       fetchTickets();
       return;
     }
-    navigate(`/booking/${ticket.showtime?._id}`);
+
+    try {
+      const token = localStorage.getItem("token") || JSON.parse(localStorage.getItem("user") || "{}").token;
+      const res = await axios.post('/api/payment/create_payment_url', {
+        bookingId: ticket._id,
+        amount: ticket.totalPrice
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data && res.data.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+      } else {
+        message.error("Không tạo được liên kết thanh toán VNPay!");
+      }
+    } catch (err: any) {
+      message.error(err.response?.data?.message || "Lỗi khi kết nối tới cổng thanh toán VNPay!");
+    }
   };
 
   return (
