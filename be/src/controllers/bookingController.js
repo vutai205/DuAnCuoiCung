@@ -182,6 +182,12 @@ exports.createBooking = async (req, res) => {
             await Voucher.updateOne({ code: voucherCode.trim().toUpperCase() }, { $inc: { usedCount: 1 } });
         }
 
+        // Send confirmation email asynchronously for confirmed cash bookings
+        if (isCash) {
+            const sendTicketEmail = require('../utils/sendTicketEmail');
+            sendTicketEmail(booking._id).catch(err => console.error("[Email Error]", err));
+        }
+
         res.status(201).json(booking);
     } catch (error) {
         res.status(500).json({ message: error.message });

@@ -106,6 +106,10 @@ exports.vnpayReturn = async (req, res) => {
                 booking.paymentStatus = 'paid';
                 await booking.save();
                 await deductFoodStock(booking);
+
+                // Send confirmation ticket email asynchronously
+                const sendTicketEmail = require('../utils/sendTicketEmail');
+                sendTicketEmail(bookingId).catch(err => console.error("[Email Error]", err));
             }
             // Đá khách hàng về Frontend trang Thành công
             return res.redirect(`http://localhost:5173/payment-success?bookingId=${bookingId}`);
