@@ -2648,3 +2648,13 @@
 [2026-08-11T00:28:18.266Z] GET /api/showtimes/6a79d9593963a0803827b390/seats 304 - 213ms
 [2026-08-11T00:28:18.485Z] GET /api/showtimes 304 - 127ms
 [2026-08-11T00:28:18.618Z] GET /api/bookings/my-bookings 304 - 163ms
+[2026-08-11T00:29:25.247Z] GET /api/bookings 304 - 180ms
+[2026-08-11T00:29:25.249Z] GET /api/bookings/stats 304 - 178ms
+[2026-08-11T00:29:25.433Z] GET /api/bookings/stats 304 - 222ms
+[2026-08-11T00:29:25.431Z] GET /api/bookings 304 - 259ms
+[2026-08-11T00:29:28.110Z] GET /api/vouchers 200 - 92ms
+[2026-08-11T00:29:28.207Z] GET /api/vouchers 304 - 69ms
+[2026-08-11T00:30:12.493Z] POST /api/vouchers 201 - 116ms
+[2026-08-11T00:30:12.616Z] GET /api/vouchers 200 - 146ms
+[2026-08-11T00:30:43.298Z] GET /api/vouchers 304 - 60ms
+[2026-08-11T00:30:45.987Z] GET /api/vouchers 304 - 65ms

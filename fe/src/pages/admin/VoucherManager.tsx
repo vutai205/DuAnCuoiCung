@@ -12,8 +12,7 @@ import {
   DatePicker,
   Popconfirm,
   message,
-  Space,
-  Badge
+  Space
 } from "antd";
 import { PlusOutlined, DeleteOutlined, CheckCircleOutlined, StopOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -113,11 +112,22 @@ export default function VoucherManager() {
       dataIndex: "code",
       key: "code",
       render: (code: string) => (
-        <Badge.Ribbon text="TNA PROMO" color="red">
-          <Card size="small" style={{ width: 140, textAlign: "center", background: "#fffbe6", border: "1px dashed #ffe58f" }}>
-            <code style={{ fontSize: "1rem", fontWeight: "bold", color: "#e50914" }}>{code}</code>
-          </Card>
-        </Badge.Ribbon>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#fffbe6",
+            border: "1px dashed #ffd666",
+            padding: "4px 12px",
+            borderRadius: 6,
+          }}
+        >
+          <span style={{ fontSize: "1.1rem" }}>🎟️</span>
+          <code style={{ fontSize: "0.95rem", fontWeight: "bold", color: "#e50914", letterSpacing: "0.5px" }}>
+            {code}
+          </code>
+        </div>
       ),
     },
     {
