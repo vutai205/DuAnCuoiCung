@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Card,
   Table,
@@ -66,7 +67,7 @@ export default function BookingList() {
   const [printing, setPrinting] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
 
-  // Single item print target (null = print all stubs)
+  // Single item print target (null = print ALL stubs)
   const [printTargetItem, setPrintTargetItem] = useState<any | null>(null);
 
   // Cancel Check-in states
@@ -100,6 +101,11 @@ export default function BookingList() {
   useEffect(() => {
     loadBookings();
   }, []);
+
+  const handleOpenDetail = (record: Booking) => {
+    setPrintTargetItem(null); // Reset print target when opening modal
+    setDetail(record);
+  };
 
   // Live Camera Scanner Hook
   useEffect(() => {
@@ -145,7 +151,7 @@ export default function BookingList() {
     try {
       const res = await axios.get(`/api/bookings/${code.trim()}`, getHeaders());
       if (res.data) {
-        setDetail(res.data);
+        handleOpenDetail(res.data);
         message.success("Đã tìm thấy thông tin vé!");
       }
     } catch (err: any) {
@@ -215,7 +221,7 @@ export default function BookingList() {
     return stubs;
   };
 
-  // Print all ticket stubs together
+  // Print ALL ticket stubs together
   const handlePrintTicket = async (record: Booking) => {
     const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
     if (isUnpaidVnpay) {
@@ -228,7 +234,7 @@ export default function BookingList() {
       return;
     }
 
-    setPrintTargetItem(null); // Null means print all stubs
+    setPrintTargetItem(null); // Ensure printing ALL stubs
     setPrinting(true);
     try {
       const res = await axios.put(`/api/bookings/${record._id}/print`, {}, getHeaders());
@@ -242,7 +248,7 @@ export default function BookingList() {
 
       setTimeout(() => {
         window.print();
-      }, 500);
+      }, 300);
     } catch (err: any) {
       if (err.response?.data?.printedAt) {
         message.error(`⚠️ Vé đã được in lúc ${new Date(err.response.data.printedAt).toLocaleString("vi-VN")}`);
@@ -276,11 +282,9 @@ export default function BookingList() {
 
       setTimeout(() => {
         window.print();
-        setPrintTargetItem(null);
-      }, 500);
+      }, 300);
     } catch (err: any) {
       message.error(err.response?.data?.message || "Lỗi khi in cuống vé lẻ!");
-      setPrintTargetItem(null);
     } finally {
       setPrinting(false);
     }
@@ -533,7 +537,7 @@ export default function BookingList() {
             <Button
               type="primary"
               size="small"
-              onClick={() => setDetail(record)}
+              onClick={() => handleOpenDetail(record)}
             >
               Chi tiết
             </Button>
@@ -660,7 +664,7 @@ export default function BookingList() {
               ) : (
                 <Alert
                   message="✅ VÉ HỢP LỆ - CHƯA IN"
-                  description="Khách hàng có thể thực hiện in vé lẻ từng ghế/bỏn nước hoặc in tất cả lần đầu."
+                  description="Khách hàng có thể thực hiện in vé lẻ từng ghế/bỏng nước hoặc in tất cả lần đầu."
                   type="success"
                   showIcon
                   style={{ marginBottom: 16 }}
@@ -900,57 +904,62 @@ export default function BookingList() {
         )}
       </Modal>
 
-      {/* Printable Thermal Receipt Stubs (hidden on screen, visible on print) */}
-      <div id="printable-ticket-section">
-        {detail && (() => {
-          const allStubs = getBookingTicketStubs(detail);
-          const stubsToPrint = printTargetItem ? [printTargetItem] : allStubs;
+      {/* Printable Thermal Receipt Stubs rendered directly via Portal to document.body */}
+      {detail && createPortal(
+        <div id="printable-ticket-section">
+          {(() => {
+            const allStubs = getBookingTicketStubs(detail);
+            const stubsToPrint = printTargetItem ? [printTargetItem] : allStubs;
 
-          return stubsToPrint.map((stub, idx) => (
-            <div key={stub.id || idx} className="thermal-ticket-stub">
-              <div className="stub-header">
-                <h2>🎬 TNA CINEMA 🎬</h2>
-                <p style={{ fontWeight: 'bold' }}>{stub.type === 'seat' ? 'VÉ XEM PHIM CHI TIẾT' : 'PHIẾU ĐỒ ĂN NƯỚC UỐNG'}</p>
-                <div className="divider-line" />
-              </div>
+            return stubsToPrint.map((stub, idx) => (
+              <div key={stub.id || idx} className="thermal-ticket-stub">
+                <div className="stub-header">
+                  <h2>🎬 TNA CINEMA 🎬</h2>
+                  <p style={{ fontWeight: 'bold', margin: '4px 0' }}>
+                    {stub.type === 'seat' ? 'VÉ XEM PHIM CHI TIẾT' : 'PHIẾU ĐỒ ĂN NƯỚC UỐNG'}
+                  </p>
+                  <div className="divider-line" />
+                </div>
 
-              <div className="stub-body">
-                <p className="stub-code"><strong>MÃ CUỐNG VÉ:</strong> #{stub.ticketCode}-{stub.subCode}</p>
-                
-                {stub.type === 'seat' ? (
-                  <>
-                    <p><strong>Phim:</strong> {stub.movieTitle}</p>
-                    <p><strong>Phòng chiếu:</strong> {stub.roomName}</p>
-                    <p><strong>Suất chiếu:</strong> {stub.startTime ? new Date(stub.startTime).toLocaleString('vi-VN') : 'N/A'}</p>
-                    <p className="highlight-seat"><strong>VỊ TRÍ GHẾ:</strong> {stub.seatName}</p>
-                    <p><strong>Giá vé:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="highlight-combo"><strong>SẢN PHẨM:</strong> {stub.comboName}</p>
-                    <p><strong>Giá tiền:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
-                    <p style={{ fontSize: '11px', color: '#555' }}>* Trình phiếu này tại quầy F&B để nhận đồ ăn *</p>
-                  </>
-                )}
+                <div className="stub-body">
+                  <p className="stub-code"><strong>MÃ CUỐNG VÉ:</strong> #{stub.ticketCode}-{stub.subCode}</p>
+                  
+                  {stub.type === 'seat' ? (
+                    <>
+                      <p><strong>Phim:</strong> {stub.movieTitle}</p>
+                      <p><strong>Phòng chiếu:</strong> {stub.roomName}</p>
+                      <p><strong>Suất chiếu:</strong> {stub.startTime ? new Date(stub.startTime).toLocaleString('vi-VN') : 'N/A'}</p>
+                      <p className="highlight-seat"><strong>VỊ TRÍ GHẾ:</strong> {stub.seatName}</p>
+                      <p><strong>Giá vé:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="highlight-combo"><strong>SẢN PHẨM:</strong> {stub.comboName}</p>
+                      <p><strong>Giá tiền:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
+                      <p style={{ fontSize: '11px', color: '#555' }}>* Trình phiếu này tại quầy F&B để nhận đồ ăn *</p>
+                    </>
+                  )}
 
-                <div className="divider-line" />
-                <p><strong>Khách hàng:</strong> {stub.customerName}</p>
-                <p><strong>SĐT:</strong> {stub.customerPhone}</p>
-                <p><strong>Thời gian in:</strong> {new Date().toLocaleString('vi-VN')}</p>
-                
-                <div className="stub-qr">
-                  <QRCode value={`${stub.ticketCode}-${stub.subCode}`} size={120} />
+                  <div className="divider-line" />
+                  <p><strong>Khách hàng:</strong> {stub.customerName}</p>
+                  <p><strong>SĐT:</strong> {stub.customerPhone}</p>
+                  <p><strong>Thời gian in:</strong> {new Date().toLocaleString('vi-VN')}</p>
+                  
+                  <div className="stub-qr">
+                    <QRCode value={`${stub.ticketCode}-${stub.subCode}`} size={120} />
+                  </div>
+                </div>
+
+                <div className="stub-footer">
+                  <p>Cảm ơn & chúc quý khách xem phim vui vẻ!</p>
+                  <p>www.tnacinema.vn - Hotline: 1900 xxxx</p>
                 </div>
               </div>
-
-              <div className="stub-footer">
-                <p>Cảm ơn & chúc quý khách xem phim vui vẻ!</p>
-                <p>www.tnacinema.vn - Hotline: 1900 xxxx</p>
-              </div>
-            </div>
-          ));
-        })()}
-      </div>
+            ));
+          })()}
+        </div>,
+        document.body
+      )}
 
       <style>{`
         @media screen {
@@ -959,57 +968,43 @@ export default function BookingList() {
           }
         }
         @media print {
-          body * {
-            visibility: hidden !important;
+          @page {
+            margin: 0;
+            size: auto;
           }
-          #printable-ticket-section, #printable-ticket-section * {
-            visibility: visible !important;
+
+          body > *:not(#printable-ticket-section) {
+            display: none !important;
           }
+
           #printable-ticket-section {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
             display: block !important;
+            position: static !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #fff !important;
           }
+
           .thermal-ticket-stub {
             width: 80mm;
-            margin: 0 auto 30px auto;
-            padding: 15px;
+            margin: 0 auto;
+            padding: 15px 12px;
             border: 1px dashed #000;
             font-family: 'Courier New', Courier, monospace;
-            page-break-after: always;
-            break-after: page;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
             text-align: center;
-            background: #fff;
-            color: #000;
+            background: #fff !important;
+            color: #000 !important;
+            box-sizing: border-box;
           }
-          .thermal-ticket-stub h2 {
-            margin: 0 0 4px 0;
-            font-size: 18px;
-          }
-          .thermal-ticket-stub p {
-            margin: 3px 0;
-            font-size: 13px;
-          }
-          .divider-line {
-            border-bottom: 1px dashed #000;
-            margin: 8px 0;
-          }
-          .highlight-seat {
-            font-size: 16px !important;
-            font-weight: bold;
-            margin: 6px 0 !important;
-          }
-          .highlight-combo {
-            font-size: 15px !important;
-            font-weight: bold;
-            margin: 6px 0 !important;
-          }
-          .stub-qr {
-            display: flex;
-            justify-content: center;
-            margin: 10px 0;
+
+          .thermal-ticket-stub:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
         }
       `}</style>
