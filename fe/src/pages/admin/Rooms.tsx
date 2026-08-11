@@ -297,6 +297,7 @@ const Rooms: React.FC = () => {
         if (typeStr.includes('IMAX')) return <Tag color="purple">IMAX 3D</Tag>;
         if (typeStr.includes('VIP')) return <Tag color="gold">Phòng VIP</Tag>;
         if (typeStr.includes('4DX')) return <Tag color="cyan">4DX</Tag>;
+        if (typeStr.includes('Sweetbox') || typeStr.includes('Đôi')) return <Tag color="magenta">💕 Sweetbox (Phòng Đôi)</Tag>;
         return <Tag color="green">{typeStr}</Tag>;
       }
     },
@@ -391,11 +392,29 @@ const Rooms: React.FC = () => {
             label="Định Dạng / Loại Phòng Chiếu"
             rules={[{ required: true, message: 'Vui lòng chọn loại phòng chiếu!' }]}
           >
-            <Select placeholder="Chọn định dạng rạp">
+            <Select
+              placeholder="Chọn định dạng rạp"
+              onChange={(val) => {
+                if (!editingRoom) {
+                  if (val === 'IMAX 3D') {
+                    form.setFieldsValue({ rowsCount: 10, seatsPerRow: 12, totalSeats: 120 });
+                  } else if (val === '4DX') {
+                    form.setFieldsValue({ rowsCount: 6, seatsPerRow: 8, totalSeats: 48 });
+                  } else if (val.includes('Sweetbox')) {
+                    form.setFieldsValue({ rowsCount: 6, seatsPerRow: 10, totalSeats: 60 });
+                  } else if (val === 'Phòng VIP') {
+                    form.setFieldsValue({ rowsCount: 7, seatsPerRow: 10, totalSeats: 70 });
+                  } else {
+                    form.setFieldsValue({ rowsCount: 8, seatsPerRow: 10, totalSeats: 80 });
+                  }
+                }
+              }}
+            >
               <Select.Option value="2D Standard">2D Standard (Phòng Tiêu Chuẩn)</Select.Option>
               <Select.Option value="Phòng VIP">Phòng VIP (Ghế Da Cao Cấp)</Select.Option>
               <Select.Option value="IMAX 3D">IMAX 3D (Màn Hình Cực Đại)</Select.Option>
               <Select.Option value="4DX">4DX (Hiệu Ứng Rung Lắc / Gió / Nước)</Select.Option>
+              <Select.Option value="Phòng Đôi (Sweetbox)">💕 Sweetbox (Phòng Đôi Lãng Mạn)</Select.Option>
             </Select>
           </Form.Item>
 
