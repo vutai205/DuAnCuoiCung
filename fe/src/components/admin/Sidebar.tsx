@@ -7,7 +7,8 @@ import {
   FaImages,
   FaChartBar,
   FaClock,
-  FaUtensils
+  FaUtensils,
+  FaTags
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -46,6 +47,11 @@ const Sidebar = () => {
       title: "Đồ Ăn & Nước Uống",
       icon: <FaUtensils />,
       path: "/admin/foods"
+    },
+    {
+      title: "Quản Lý Voucher",
+      icon: <FaTags />,
+      path: "/admin/vouchers"
     },
     {
       title: "Quản Lý Tài Khoản & Khách Hàng",

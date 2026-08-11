@@ -20,6 +20,7 @@ import Showtimes from "./pages/admin/Showtimes";
 import FoodList from "./app/pages/admin/Food/FoodList";
 import CustomerList from "./app/pages/admin/Customer/CustomerList";
 import BookingList from "./app/pages/admin/Booking/BookingList";
+import VoucherManager from "./pages/admin/VoucherManager";
 
 // Customer components
 import Header from "./app/components/Header/Header";
@@ -176,6 +177,7 @@ function App() {
           <Route path="showtimes" element={<Showtimes />} />
           <Route path="users" element={<UserManager />} />
           <Route path="foods" element={<FoodList />} />
+          <Route path="vouchers" element={<VoucherManager />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="bookings" element={<BookingList />} />
         </Route>

@@ -13,6 +13,8 @@ const bookingSchema = new mongoose.Schema({
         }
     ],
     totalPrice: { type: Number, required: true },
+    voucherCode: { type: String, default: null },
+    discountAmount: { type: Number, default: 0 },
     ticketCode: { type: String },
     paymentMethod: {
         type: String,

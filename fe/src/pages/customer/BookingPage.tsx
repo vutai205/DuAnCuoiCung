@@ -75,6 +75,13 @@ const BookingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdBooking, setCreatedBooking] = useState<any | null>(null);
 
+  // Voucher states
+  const [voucherInput, setVoucherInput] = useState<string>('');
+  const [appliedVoucher, setAppliedVoucher] = useState<any | null>(null);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [voucherMessage, setVoucherMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isValidatingVoucher, setIsValidatingVoucher] = useState<boolean>(false);
+
   useEffect(() => {
     const fetchSeatLayout = async () => {
       try {
@@ -248,7 +255,47 @@ const BookingPage: React.FC = () => {
 
   const ticketsTotal = selectedSeats.reduce((sum, seat) => sum + calculateSeatPrice(seat), 0);
   const combosTotal = combos.reduce((sum, c) => sum + c.price * c.count, 0);
-  const grandTotal = ticketsTotal + combosTotal;
+  const rawTotal = ticketsTotal + combosTotal;
+  const grandTotal = Math.max(0, rawTotal - discountAmount);
+
+  const handleApplyVoucher = async () => {
+    if (!voucherInput.trim()) {
+      setVoucherMessage({ type: 'error', text: 'Vui lòng nhập mã Voucher!' });
+      return;
+    }
+    setIsValidatingVoucher(true);
+    setVoucherMessage(null);
+    try {
+      const res = await axios.post('/api/vouchers/validate', {
+        code: voucherInput.trim(),
+        orderTotal: rawTotal
+      });
+      if (res.data.valid) {
+        setAppliedVoucher(res.data.voucher);
+        setDiscountAmount(res.data.discountAmount);
+        setVoucherMessage({
+          type: 'success',
+          text: `Áp dụng thành công! Giảm ${res.data.discountAmount.toLocaleString('vi-VN')} đ`
+        });
+      }
+    } catch (err: any) {
+      setAppliedVoucher(null);
+      setDiscountAmount(0);
+      setVoucherMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Mã giảm giá không hợp lệ hoặc đã hết hạn!'
+      });
+    } finally {
+      setIsValidatingVoucher(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherInput('');
+    setAppliedVoucher(null);
+    setDiscountAmount(0);
+    setVoucherMessage(null);
+  };
 
   const basePrice = showtimeData?.ticketPrice || 60000;
   const vipPrice = basePrice + 15000;
@@ -323,6 +370,8 @@ const BookingPage: React.FC = () => {
         seats: selectedSeats,
         combos: selectedCombosData,
         totalPrice: grandTotal,
+        voucherCode: appliedVoucher ? appliedVoucher.code : null,
+        discountAmount,
         paymentMethod
       };
 
@@ -600,7 +649,59 @@ const BookingPage: React.FC = () => {
               </table>
             </div>
 
+            {/* Voucher Section */}
+            <div className="voucher-section-box" style={{ margin: '15px 0', padding: '12px', background: '#131b2e', borderRadius: '8px', border: '1px solid #1e293b' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🎟️ MÃ GIẢM GIÁ / VOUCHER</span>
+              </div>
+              {appliedVoucher ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#064e3b', padding: '8px 12px', borderRadius: '6px', border: '1px solid #10b981' }}>
+                  <div>
+                    <strong style={{ color: '#10b981', display: 'block', fontSize: '0.9rem' }}>MÃ: {appliedVoucher.code}</strong>
+                    <span style={{ fontSize: '0.8rem', color: '#a7f3d0' }}>- {discountAmount.toLocaleString('vi-VN')} đ</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRemoveVoucher}
+                    style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+                    title="Gỡ bỏ mã này"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Nhập mã (VD: TNA20K)"
+                    value={voucherInput}
+                    onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '0.85rem', outline: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    disabled={isValidatingVoucher || !voucherInput.trim()}
+                    onClick={handleApplyVoucher}
+                    style={{ padding: '8px 16px', background: '#e50914', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: isValidatingVoucher || !voucherInput.trim() ? 0.6 : 1 }}
+                  >
+                    {isValidatingVoucher ? '...' : 'Áp dụng'}
+                  </button>
+                </div>
+              )}
+              {voucherMessage && (
+                <div style={{ fontSize: '0.8rem', marginTop: '6px', color: voucherMessage.type === 'success' ? '#10b981' : '#f87171' }}>
+                  {voucherMessage.text}
+                </div>
+              )}
+            </div>
+
             <div className="summary-section border-top">
+              {discountAmount > 0 && (
+                <div className="summary-row discount-row" style={{ display: 'flex', justifyContent: 'space-between', color: '#10b981', fontSize: '0.9rem', marginBottom: '8px' }}>
+                  <span>Giảm giá Voucher:</span>
+                  <span style={{ fontWeight: 'bold' }}>-{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}</span>
+                </div>
+              )}
               <div className="summary-row total-price-row">
                 <span>TỔNG TIỀN:</span>
                 <span className="grand-price">

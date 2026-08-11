@@ -19,6 +19,7 @@ export default function Sidebar() {
         <li><Link to="/admin/showtimes" style={{ color: "#fff" }}>Quản lý suất chiếu</Link></li>
         <li><Link to="/admin/bookings" style={{ color: "#fff" }}>Quản lý vé</Link></li>
         <li><Link to="/admin/foods" style={{ color: "#fff" }}>Đồ ăn & nước uống</Link></li>
+        <li><Link to="/admin/vouchers" style={{ color: "#fff" }}>Quản lý voucher</Link></li>
         <li><Link to="/admin/users" style={{ color: "#fff" }}>Quản lý tài khoản & khách hàng</Link></li>
       </ul>
     </div>

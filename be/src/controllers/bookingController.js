@@ -105,7 +105,7 @@ exports.restoreFoodStock = restoreFoodStock;
 // @route   POST /api/bookings
 exports.createBooking = async (req, res) => {
     try {
-        const { showtimeId, seats, combos, totalPrice: reqPrice, paymentMethod = 'vnpay' } = req.body;
+        const { showtimeId, seats, combos, totalPrice: reqPrice, paymentMethod = 'vnpay', voucherCode, discountAmount = 0 } = req.body;
         
         // Auto-expire pending VNPay seat holds older than 5 minutes for this showtime
         await expirePendingBookings(showtimeId);
@@ -167,12 +167,20 @@ exports.createBooking = async (req, res) => {
             seats,
             combos: combos || [],
             totalPrice: reqPrice,
+            voucherCode: voucherCode || null,
+            discountAmount: Number(discountAmount) || 0,
             ticketCode,
             paymentMethod,
             expiresAt,
             status: bookingStatus,
             paymentStatus: 'unpaid'
         });
+
+        // Increment voucher usage count if valid voucher code was provided
+        if (voucherCode) {
+            const Voucher = require('../models/Voucher');
+            await Voucher.updateOne({ code: voucherCode.trim().toUpperCase() }, { $inc: { usedCount: 1 } });
+        }
 
         res.status(201).json(booking);
     } catch (error) {
