@@ -160,6 +160,27 @@ const Showtimes: React.FC = () => {
         return;
       }
 
+      // Client-side conflict pre-check
+      const dbConflict = showtimes.find(st => {
+        if (editingShowtime && st._id === editingShowtime._id) return false;
+        const stRoomId = typeof st.room === 'object' ? st.room._id : st.room;
+        if (stRoomId !== values.room) return false;
+
+        const existingStart = new Date(st.startTime).getTime();
+        const existingEnd = new Date(st.endTime).getTime();
+        const newStartMs = startTime.getTime();
+        const newEndMs = endTime.getTime();
+
+        return newStartMs < existingEnd && newEndMs > existingStart;
+      });
+
+      if (dbConflict) {
+        const conflictMovieTitle = typeof dbConflict.movie === 'object' ? dbConflict.movie.title : 'Phim khác';
+        const conflictRoomName = typeof dbConflict.room === 'object' ? dbConflict.room.name : 'Phòng chiếu';
+        message.error(`Trùng lịch chiếu! Phòng "${conflictRoomName}" đã có suất chiếu [${conflictMovieTitle}] (${dayjs(dbConflict.startTime).format('HH:mm DD/MM/YYYY')} - ${dayjs(dbConflict.endTime).format('HH:mm DD/MM/YYYY')}).`);
+        return;
+      }
+
       const payload = {
         movie: values.movie,
         room: values.room,

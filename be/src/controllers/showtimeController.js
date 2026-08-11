@@ -2,6 +2,27 @@ const Showtime = require('../models/Showtime');
 const Room = require('../models/Room');
 const Booking = require('../models/Booking');
 const { expirePendingBookings } = require('./bookingController');
+const moment = require('moment');
+
+/**
+ * Checks if a proposed showtime overlaps with existing showtimes in the specified room
+ */
+const checkShowtimeOverlap = async (roomId, startTime, endTime, excludeShowtimeId = null) => {
+    const newStart = new Date(startTime);
+    const newEnd = new Date(endTime);
+
+    const query = {
+        room: roomId,
+        startTime: { $lt: newEnd },
+        endTime: { $gt: newStart }
+    };
+
+    if (excludeShowtimeId) {
+        query._id = { $ne: excludeShowtimeId };
+    }
+
+    return await Showtime.findOne(query).populate('movie room');
+};
 
 // @desc    Get showtimes for a movie (Grouped by Date)
 // @route   GET /api/showtimes/movie/:movieId
@@ -124,8 +145,27 @@ exports.createShowtime = async (req, res) => {
     try {
         const { movie, room, startTime, endTime, ticketPrice } = req.body;
         
-        if (new Date(startTime) < new Date()) {
+        const newStart = new Date(startTime);
+        const newEnd = new Date(endTime);
+
+        if (newStart < new Date()) {
             return res.status(400).json({ message: 'Không thể tạo suất chiếu ở thời gian trong quá khứ!' });
+        }
+
+        if (newEnd <= newStart) {
+            return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu!' });
+        }
+
+        // 🛑 Kiểm tra trùng lịch suất chiếu cùng phòng
+        const conflict = await checkShowtimeOverlap(room, newStart, newEnd);
+        if (conflict) {
+            const conflictMovieTitle = conflict.movie?.title || 'Phim khác';
+            const conflictRoomName = conflict.room?.name || 'Phòng chiếu';
+            const conflictStart = moment(conflict.startTime).format('HH:mm DD/MM/YYYY');
+            const conflictEnd = moment(conflict.endTime).format('HH:mm DD/MM/YYYY');
+            return res.status(400).json({
+                message: `Trùng lịch chiếu! Phòng "${conflictRoomName}" đã có suất chiếu phim "${conflictMovieTitle}" từ ${conflictStart} đến ${conflictEnd}.`
+            });
         }
 
         const showtime = new Showtime({
@@ -160,7 +200,20 @@ exports.createBatchShowtimes = async (req, res) => {
             return res.status(400).json({ message: 'Tất cả các suất chiếu được chọn đều trong quá khứ, không thể lưu!' });
         }
 
-        const createdShowtimes = await Showtime.insertMany(validShowtimes);
+        // 🛑 Kiểm tra loại bỏ từng suất chiếu bị trùng lịch DB
+        const nonConflictingShowtimes = [];
+        for (const st of validShowtimes) {
+            const conflict = await checkShowtimeOverlap(st.room, st.startTime, st.endTime);
+            if (!conflict) {
+                nonConflictingShowtimes.push(st);
+            }
+        }
+
+        if (nonConflictingShowtimes.length === 0) {
+            return res.status(400).json({ message: 'Tất cả các suất chiếu gửi lên đều bị trùng lịch với suất chiếu hiện có trong rạp!' });
+        }
+
+        const createdShowtimes = await Showtime.insertMany(nonConflictingShowtimes);
         res.status(201).json({
             success: true,
             count: createdShowtimes.length,
@@ -201,6 +254,22 @@ exports.updateShowtime = async (req, res) => {
 
         if (activeBookingsCount > 0) {
             return res.status(400).json({ message: `Suất chiếu đã có khách đặt vé (${activeBookingsCount} đơn vé), không thể chỉnh sửa!` });
+        }
+
+        const targetRoom = req.body.room || showtime.room;
+        const targetStart = req.body.startTime || showtime.startTime;
+        const targetEnd = req.body.endTime || showtime.endTime;
+
+        // 🛑 Kiểm tra trùng lịch suất chiếu cùng phòng khi cập nhật
+        const conflict = await checkShowtimeOverlap(targetRoom, targetStart, targetEnd, showtime._id);
+        if (conflict) {
+            const conflictMovieTitle = conflict.movie?.title || 'Phim khác';
+            const conflictRoomName = conflict.room?.name || 'Phòng chiếu';
+            const conflictStart = moment(conflict.startTime).format('HH:mm DD/MM/YYYY');
+            const conflictEnd = moment(conflict.endTime).format('HH:mm DD/MM/YYYY');
+            return res.status(400).json({
+                message: `Trùng lịch chiếu! Phòng "${conflictRoomName}" đã có suất chiếu phim "${conflictMovieTitle}" từ ${conflictStart} đến ${conflictEnd}.`
+            });
         }
 
         Object.assign(showtime, req.body);
