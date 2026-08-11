@@ -68,9 +68,11 @@ exports.getShowtimeSeats = async (req, res) => {
 
         // 3. Tính toán trạng thái của từng ghế
         const seatStatuses = seatLayout.map(seatObj => {
+            const isMaintenance = seatObj.type === 'maintenance' || seatObj.status === 'maintenance';
             return {
                 seatName: seatObj.seatName,
                 type: seatObj.type,
+                status: isMaintenance ? 'maintenance' : 'active',
                 isBooked: bookedSeats.includes(seatObj.seatName)
             };
         });

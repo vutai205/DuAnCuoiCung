@@ -483,19 +483,21 @@ const BookingPage: React.FC = () => {
                           >
                             {pair.map(seat => {
                               const isSelected = selectedSeats.includes(seat.seatName);
+                              const isMaintenance = seat.type === 'maintenance' || (seat as any).status === 'maintenance';
                               let seatClass = `seat-btn ${seat.type}`;
                               if (seat.isBooked) seatClass += ' booked';
+                              if (isMaintenance) seatClass += ' maintenance';
                               if (isSelected) seatClass += ' selected';
 
                               return (
                                 <button
                                   key={seat.seatName}
                                   className={seatClass}
-                                  disabled={seat.isBooked}
+                                  disabled={seat.isBooked || isMaintenance}
                                   onClick={() => handleToggleSeat(seat)}
-                                  title={`${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
+                                  title={isMaintenance ? `${seat.seatName} - Ghế đang bảo trì/hỏng, không thể chọn` : `${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
                                 >
-                                  {seat.seatName}
+                                  {isMaintenance ? '🛠️' : seat.seatName}
                                 </button>
                               );
                             })}
@@ -514,19 +516,21 @@ const BookingPage: React.FC = () => {
                   <div className="seats-list">
                     {rowSeats.map(seat => {
                       const isSelected = selectedSeats.includes(seat.seatName);
+                      const isMaintenance = seat.type === 'maintenance' || (seat as any).status === 'maintenance';
                       let seatClass = `seat-btn ${seat.type}`;
                       if (seat.isBooked) seatClass += ' booked';
+                      if (isMaintenance) seatClass += ' maintenance';
                       if (isSelected) seatClass += ' selected';
 
                       return (
                         <button
                           key={seat.seatName}
                           className={seatClass}
-                          disabled={seat.isBooked}
+                          disabled={seat.isBooked || isMaintenance}
                           onClick={() => handleToggleSeat(seat)}
-                          title={`${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
+                          title={isMaintenance ? `${seat.seatName} - Ghế đang bảo trì/hỏng, không thể chọn` : `${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
                         >
-                          {seat.seatName}
+                          {isMaintenance ? '🛠️' : seat.seatName}
                         </button>
                       );
                     })}
@@ -556,6 +560,9 @@ const BookingPage: React.FC = () => {
             </div>
             <div className="legend-item">
               <span className="legend-box booked"></span> Đã bán
+            </div>
+            <div className="legend-item">
+              <span className="legend-box maintenance" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>🛠️</span> Ghế Bảo Trì
             </div>
           </div>
 

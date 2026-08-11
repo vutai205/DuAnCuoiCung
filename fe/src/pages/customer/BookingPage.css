@@ -231,6 +231,13 @@
   text-decoration: line-through;
 }
 
+.seat-btn.maintenance {
+  background: rgba(71, 85, 105, 0.6) !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+  cursor: not-allowed;
+}
+
 /* Seat Legends with Prices */
 .seat-legends {
   display: flex;

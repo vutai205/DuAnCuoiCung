@@ -33,25 +33,27 @@ exports.getRoomById = async (req, res) => {
 // @access  Private/Admin
 exports.createRoom = async (req, res) => {
     try {
-        const { name, totalSeats } = req.body;
+        const { name, type = '2D Standard', rowsCount = 8, seatsPerRow = 10, totalSeats: reqSeats } = req.body;
 
-        // Tự động sinh mảng ghế: Hàng A, B, C... mỗi hàng 10 ghế
+        const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+        const actualRows = Math.min(rowsCount || 8, rowsLetters.length);
+        const actualCols = seatsPerRow || 10;
+        const totalSeats = reqSeats || (actualRows * actualCols);
+
         const seatLayout = [];
-        const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
-        let seatsPerRow = 10;
-        let totalRows = Math.ceil(totalSeats / seatsPerRow);
-        
         let currentSeatCount = 0;
-        for (let i = 0; i < totalRows; i++) {
-            let seatType = 'vip';
-            if (i < 2) seatType = 'regular';
-            if (i === totalRows - 1 && totalRows > 3) seatType = 'couple'; // Đảm bảo có ít nhất 4 hàng mới có couple
 
-            for (let j = 1; j <= seatsPerRow; j++) {
+        for (let i = 0; i < actualRows; i++) {
+            let seatType = 'regular';
+            if (i >= 2 && i < actualRows - 1) seatType = 'vip';
+            if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
+
+            for (let j = 1; j <= actualCols; j++) {
                 if (currentSeatCount < totalSeats) {
                     seatLayout.push({
-                        seatName: `${rows[i]}${j}`,
-                        type: seatType
+                        seatName: `${rowsLetters[i]}${j}`,
+                        type: seatType,
+                        status: 'active'
                     });
                     currentSeatCount++;
                 }
@@ -60,7 +62,9 @@ exports.createRoom = async (req, res) => {
 
         const room = new Room({
             name,
-            type: req.body.type || '2D Standard',
+            type,
+            rowsCount: actualRows,
+            seatsPerRow: actualCols,
             totalSeats,
             seatLayout
         });
@@ -72,50 +76,63 @@ exports.createRoom = async (req, res) => {
     }
 };
 
-// @desc    Update a room
+// @desc    Update a room (including seatLayout and seat maintenance)
 // @route   PUT /api/rooms/:id
 // @access  Private/Admin
 exports.updateRoom = async (req, res) => {
     try {
         const room = await Room.findById(req.params.id);
 
-        if (room) {
-            room.name = req.body.name || room.name;
-            if (req.body.type) room.type = req.body.type;
-            
-            // Nếu thay đổi tổng số ghế, hệ thống nên sinh lại sơ đồ ghế
-            if (req.body.totalSeats && req.body.totalSeats !== room.totalSeats) {
-                room.totalSeats = req.body.totalSeats;
-                
-                const seatLayout = [];
-                const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
-                let seatsPerRow = 10;
-                let totalRows = Math.ceil(room.totalSeats / seatsPerRow);
-                
-                let currentSeatCount = 0;
-                for (let i = 0; i < totalRows; i++) {
-                    let seatType = 'vip';
-                    if (i < 2) seatType = 'regular';
-                    if (i === totalRows - 1 && totalRows > 3) seatType = 'couple';
+        if (!room) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
 
-                    for (let j = 1; j <= seatsPerRow; j++) {
-                        if (currentSeatCount < room.totalSeats) {
-                            seatLayout.push({
-                                seatName: `${rows[i]}${j}`,
-                                type: seatType
-                            });
-                            currentSeatCount++;
-                        }
+        room.name = req.body.name || room.name;
+        if (req.body.type) room.type = req.body.type;
+
+        // Direct seat layout update (from visual seat layout editor)
+        if (Array.isArray(req.body.seatLayout)) {
+            room.seatLayout = req.body.seatLayout;
+            room.totalSeats = req.body.seatLayout.length;
+        } else if (
+            (req.body.rowsCount && req.body.rowsCount !== room.rowsCount) ||
+            (req.body.seatsPerRow && req.body.seatsPerRow !== room.seatsPerRow) ||
+            (req.body.totalSeats && req.body.totalSeats !== room.totalSeats)
+        ) {
+            // Regenerate layout if dimensions changed
+            const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+            const newRows = req.body.rowsCount || room.rowsCount || 8;
+            const newCols = req.body.seatsPerRow || room.seatsPerRow || 10;
+            const actualRows = Math.min(newRows, rowsLetters.length);
+            const totalSeats = req.body.totalSeats || (actualRows * newCols);
+
+            room.rowsCount = actualRows;
+            room.seatsPerRow = newCols;
+            room.totalSeats = totalSeats;
+
+            const seatLayout = [];
+            let currentSeatCount = 0;
+            for (let i = 0; i < actualRows; i++) {
+                let seatType = 'regular';
+                if (i >= 2 && i < actualRows - 1) seatType = 'vip';
+                if (i === actualRows - 1 && actualRows > 3) seatType = 'couple';
+
+                for (let j = 1; j <= newCols; j++) {
+                    if (currentSeatCount < totalSeats) {
+                        seatLayout.push({
+                            seatName: `${rowsLetters[i]}${j}`,
+                            type: seatType,
+                            status: 'active'
+                        });
+                        currentSeatCount++;
                     }
                 }
-                room.seatLayout = seatLayout;
             }
-
-            const updatedRoom = await room.save();
-            res.json(updatedRoom);
-        } else {
-            res.status(404).json({ message: 'Room not found' });
+            room.seatLayout = seatLayout;
         }
+
+        const updatedRoom = await room.save();
+        res.json(updatedRoom);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
