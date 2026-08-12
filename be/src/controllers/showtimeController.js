@@ -36,8 +36,11 @@ exports.getShowtimesByMovie = async (req, res) => {
         .populate('room', 'name') // Chỉ cần lấy tên phòng
         .sort({ startTime: 1 }); // Sắp xếp giờ chiếu tăng dần
 
+        // Lọc bỏ các suất chiếu mồ côi mà phòng đã bị xóa trước đó
+        const validShowtimes = showtimes.filter(st => st.room != null);
+
         // 2. Nhóm các suất chiếu theo Ngày (YYYY-MM-DD) theo Múi giờ Việt Nam (UTC+7)
-        const grouped = showtimes.reduce((acc, showtime) => {
+        const grouped = validShowtimes.reduce((acc, showtime) => {
             const d = new Date(showtime.startTime);
             // Cộng 7 giờ để chuyển đổi UTC sang Giờ Việt Nam (GMT+7)
             const vnDate = new Date(d.getTime() + (7 * 60 * 60 * 1000));
@@ -73,11 +76,11 @@ exports.getShowtimeSeats = async (req, res) => {
 
         // 1. Lấy thông tin showtime & room
         const showtime = await Showtime.findById(showtimeId).populate('room');
-        if (!showtime) {
-            return res.status(404).json({ message: 'Showtime not found' });
+        if (!showtime || !showtime.room) {
+            return res.status(404).json({ message: 'Phòng chiếu của suất chiếu này không tồn tại hoặc đã bị xóa!' });
         }
 
-        const seatLayout = showtime.room.seatLayout; // Mảng tất cả các ghế trong phòng
+        const seatLayout = showtime.room.seatLayout || []; // Mảng tất cả các ghế trong phòng
 
         // 2. Lấy tất cả các ghế đã được đặt trong suất chiếu này (Loại trừ các đơn hết hạn 5p)
         const now = new Date();

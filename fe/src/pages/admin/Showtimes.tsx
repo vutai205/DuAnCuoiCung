@@ -125,8 +125,8 @@ const Showtimes: React.FC = () => {
 
   const handleOpenEditModal = (record: ShowtimeItem) => {
     setEditingShowtime(record);
-    const movieId = typeof record.movie === 'object' ? record.movie._id : record.movie;
-    const roomId = typeof record.room === 'object' ? record.room._id : record.room;
+    const movieId = record.movie && typeof record.movie === 'object' ? record.movie._id : record.movie;
+    const roomId = record.room && typeof record.room === 'object' ? record.room._id : record.room;
 
     form.setFieldsValue({
       movie: movieId,
@@ -163,7 +163,7 @@ const Showtimes: React.FC = () => {
       // Client-side conflict pre-check
       const dbConflict = showtimes.find(st => {
         if (editingShowtime && st._id === editingShowtime._id) return false;
-        const stRoomId = typeof st.room === 'object' ? st.room._id : st.room;
+        const stRoomId = st.room && typeof st.room === 'object' ? st.room._id : st.room;
         if (stRoomId !== values.room) return false;
 
         const existingStart = new Date(st.startTime).getTime();
@@ -175,8 +175,8 @@ const Showtimes: React.FC = () => {
       });
 
       if (dbConflict) {
-        const conflictMovieTitle = typeof dbConflict.movie === 'object' ? dbConflict.movie.title : 'Phim khác';
-        const conflictRoomName = typeof dbConflict.room === 'object' ? dbConflict.room.name : 'Phòng chiếu';
+        const conflictMovieTitle = dbConflict.movie && typeof dbConflict.movie === 'object' ? dbConflict.movie.title : 'Phim khác';
+        const conflictRoomName = dbConflict.room && typeof dbConflict.room === 'object' ? dbConflict.room.name : 'Phòng chiếu';
         message.error(`Trùng lịch chiếu! Phòng "${conflictRoomName}" đã có suất chiếu [${conflictMovieTitle}] (${dayjs(dbConflict.startTime).format('HH:mm DD/MM/YYYY')} - ${dayjs(dbConflict.endTime).format('HH:mm DD/MM/YYYY')}).`);
         return;
       }

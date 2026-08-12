@@ -178,19 +178,21 @@ const MovieDetailPage: React.FC = () => {
                   <div className="showtimes-room-group">
                     <div className="room-badge-title">TNA CINEMA - HÀ NỘI</div>
                     <div className="showtime-pills-grid">
-                      {currentDayGroup.showtimes.map((st) => (
-                        <div
-                          key={st._id}
-                          className="showtime-pill-card"
-                          onClick={() => navigate(`/booking/${st._id}`)}
-                        >
-                          <span className="st-time">{dayjs(st.startTime).format('HH:mm')}</span>
-                          <span className="st-room">{st.room.name}</span>
-                          <span className="st-price">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(st.ticketPrice)}
-                          </span>
-                        </div>
-                      ))}
+                      {currentDayGroup.showtimes
+                        .filter((st) => st && st.room)
+                        .map((st) => (
+                          <div
+                            key={st._id}
+                            className="showtime-pill-card"
+                            onClick={() => navigate(`/booking/${st._id}`)}
+                          >
+                            <span className="st-time">{dayjs(st.startTime).format('HH:mm')}</span>
+                            <span className="st-room">{st.room?.name || 'Phòng chiếu'}</span>
+                            <span className="st-price">
+                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(st.ticketPrice)}
+                            </span>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 ) : (
