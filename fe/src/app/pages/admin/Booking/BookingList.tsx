@@ -181,8 +181,67 @@ export default function BookingList() {
     const seatCount = booking.seats?.length || 1;
     const perSeatPrice = Math.round(totalSeatPrice / seatCount);
 
-    // 1. Seat ticket stubs (Each seat is a separate ticket stub)
-    (booking.seats || []).forEach((seatName) => {
+    const roomSeatLayout = (booking.showtime?.room as any)?.seatLayout || [];
+    const getSeatType = (seatName: string) => {
+      const found = roomSeatLayout.find((s: any) => s.seatName === seatName);
+      return found ? found.type : null;
+    };
+
+    const seatsList = [...(booking.seats || [])];
+    const processedSeats = new Set<string>();
+
+    // 1. Group seats: Couple seat pairs (e.g. G1 & G2) are merged into 1 ticket stub!
+    seatsList.forEach((seatName) => {
+      if (processedSeats.has(seatName)) return;
+
+      const match = seatName.match(/^([A-Z]+)(\d+)$/);
+      const rowLetter = match ? match[1] : '';
+      const seatNum = match ? parseInt(match[2], 10) : 0;
+      const seatType = getSeatType(seatName);
+
+      // Check if this seat is a couple seat
+      const isCoupleType = seatType === 'couple' || seatName.includes('SWEET') || seatType === 'sweetbox';
+
+      if (isCoupleType && match) {
+        // Find adjacent pair in same row (1-2, 3-4, 5-6, 7-8...)
+        const pairNum = seatNum % 2 !== 0 ? seatNum + 1 : seatNum - 1;
+        const pairSeatName = `${rowLetter}${pairNum}`;
+
+        if (seatsList.includes(pairSeatName) && !processedSeats.has(pairSeatName)) {
+          // Found couple pair! Merge into 1 single Ticket Stub
+          processedSeats.add(seatName);
+          processedSeats.add(pairSeatName);
+
+          const sortedPair = [seatName, pairSeatName].sort((a, b) => {
+            const numA = parseInt(a.replace(/\D/g, ''), 10);
+            const numB = parseInt(b.replace(/\D/g, ''), 10);
+            return numA - numB;
+          });
+
+          const pairLabel = sortedPair.join(' & ');
+
+          stubs.push({
+            id: `seat_couple_${sortedPair.join('_')}`,
+            subCode: sortedPair.join('-'),
+            type: 'seat',
+            icon: '💕',
+            title: `Vé Ghế Đôi (Couple) - Ghế ${pairLabel}`,
+            seatName: pairLabel,
+            isCouple: true,
+            movieTitle: booking.showtime?.movie?.title || 'Phim chiếu tại rạp',
+            roomName: booking.showtime?.room?.name || 'Phòng chiếu',
+            startTime: booking.showtime?.startTime,
+            price: perSeatPrice * 2,
+            customerName: booking.user?.name || 'Khách vãng lai',
+            customerPhone: booking.user?.phone || 'Chưa cập nhật',
+            ticketCode: booking.ticketCode || booking._id.slice(-8).toUpperCase()
+          });
+          return;
+        }
+      }
+
+      // Single seat stub (Regular / VIP)
+      processedSeats.add(seatName);
       stubs.push({
         id: `seat_${seatName}`,
         subCode: seatName,
@@ -190,6 +249,7 @@ export default function BookingList() {
         icon: '🎟️',
         title: `Vé Ghế Xem Phim - Ghế ${seatName}`,
         seatName: seatName,
+        isCouple: false,
         movieTitle: booking.showtime?.movie?.title || 'Phim chiếu tại rạp',
         roomName: booking.showtime?.room?.name || 'Phòng chiếu',
         startTime: booking.showtime?.startTime,
@@ -916,7 +976,7 @@ export default function BookingList() {
                 <div className="stub-header">
                   <h2>🎬 TNA CINEMA 🎬</h2>
                   <p style={{ fontWeight: 'bold', margin: '4px 0' }}>
-                    {stub.type === 'seat' ? 'VÉ XEM PHIM CHI TIẾT' : 'PHIẾU ĐỒ ĂN NƯỚC UỐNG'}
+                    {stub.type === 'seat' ? (stub.isCouple ? 'Vé GHẾ ĐÔI (COUPLE)' : 'VÉ XEM PHIM CHI TIẾT') : 'PHIẾU ĐỒ ĂN NƯỚC UỐNG'}
                   </p>
                   <div className="divider-line" />
                 </div>
@@ -929,7 +989,7 @@ export default function BookingList() {
                       <p><strong>Phim:</strong> {stub.movieTitle}</p>
                       <p><strong>Phòng chiếu:</strong> {stub.roomName}</p>
                       <p><strong>Suất chiếu:</strong> {stub.startTime ? new Date(stub.startTime).toLocaleString('vi-VN') : 'N/A'}</p>
-                      <p className="highlight-seat"><strong>VỊ TRÍ GHẾ:</strong> {stub.seatName}</p>
+                      <p className="highlight-seat"><strong>VỊ TRÍ GHẾ:</strong> {stub.isCouple ? `💕 GHẾ ĐÔI ${stub.seatName}` : stub.seatName}</p>
                       <p><strong>Giá vé:</strong> {stub.price.toLocaleString('vi-VN')} VNĐ</p>
                     </>
                   ) : (
