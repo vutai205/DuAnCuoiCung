@@ -148,8 +148,13 @@ const BookingPage: React.FC = () => {
     return () => clearInterval(pollInterval);
   }, [showtimeId]);
 
-  // Timer countdown
+  // Timer countdown: Only count down when user has selected at least one seat
   useEffect(() => {
+    if (selectedSeats.length === 0) {
+      setTimeLeft(300);
+      return;
+    }
+
     if (timeLeft <= 0) return;
     const timer = setInterval(() => {
       setTimeLeft(prev => {
@@ -163,7 +168,7 @@ const BookingPage: React.FC = () => {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, selectedSeats.length]);
 
   // Get couple seat pair (e.g. H1 & H2, H3 & H4)
   const getCouplePair = (seatName: string, allSeats: SeatItem[]) => {
@@ -455,9 +460,11 @@ const BookingPage: React.FC = () => {
           </div>
 
           <div className="timer-box">
-            <span className="timer-label">Thời gian giữ chỗ 5p:</span>
-            <span className={`timer-clock ${timeLeft < 60 ? 'warning' : ''}`}>
-              ⏱ {formatTimer(timeLeft)}
+            <span className="timer-label">
+              {selectedSeats.length > 0 ? 'Thời gian giữ chỗ 5p:' : 'Thời gian phiên chọn ghế:'}
+            </span>
+            <span className={`timer-clock ${timeLeft < 60 && selectedSeats.length > 0 ? 'warning' : ''}`}>
+              ⏱ {selectedSeats.length > 0 ? formatTimer(timeLeft) : '05:00'}
             </span>
           </div>
         </div>
