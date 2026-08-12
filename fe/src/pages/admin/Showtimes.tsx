@@ -89,7 +89,10 @@ const Showtimes: React.FC = () => {
     setLoading(true);
     try {
       const res = await axios.get('/api/showtimes', getHeaders());
-      setShowtimes(res.data);
+      const cleanData = Array.isArray(res.data)
+        ? res.data.filter((st: any) => st && st.room && st.movie)
+        : [];
+      setShowtimes(cleanData);
     } catch {
       message.error('Không thể tải danh sách suất chiếu');
     } finally {
@@ -266,7 +269,8 @@ const Showtimes: React.FC = () => {
         conflictReason = `Suất chiếu thuộc quá khứ (Đã qua giờ hiện tại ${now.format('HH:mm')})`;
       } else {
         const dbConflict = showtimes.find(st => {
-          const stRoomId = typeof st.room === 'object' ? st.room._id : st.room;
+          if (!st || !st.room) return false;
+          const stRoomId = st.room && typeof st.room === 'object' ? st.room._id : st.room;
           if (stRoomId !== roomId) return false;
 
           const existingStart = new Date(st.startTime).getTime();
@@ -279,7 +283,7 @@ const Showtimes: React.FC = () => {
 
         if (dbConflict) {
           hasConflict = true;
-          const conflictMovieTitle = typeof dbConflict.movie === 'object' ? dbConflict.movie.title : 'Phim khác';
+          const conflictMovieTitle = dbConflict.movie && typeof dbConflict.movie === 'object' ? dbConflict.movie.title : 'Phim khác';
           conflictReason = `Trùng suất chiếu [${conflictMovieTitle}] (${dayjs(dbConflict.startTime).format('HH:mm')} - ${dayjs(dbConflict.endTime).format('HH:mm')})`;
         }
       }
