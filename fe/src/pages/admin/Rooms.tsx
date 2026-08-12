@@ -41,6 +41,9 @@ interface Room {
   rowsCount?: number;
   seatsPerRow?: number;
   seatLayout?: SeatItem[];
+  showtimesCount?: number;
+  bookingsCount?: number;
+  hasActiveData?: boolean;
   createdAt?: string;
 }
 
@@ -109,13 +112,13 @@ const Rooms: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       const token = getToken();
-      await axios.delete(`/api/rooms/${id}`, {
+      const res = await axios.delete(`/api/rooms/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      message.success('Đã xóa phòng chiếu thành công');
+      message.success(res.data?.message || 'Đã xóa phòng chiếu thành công');
       fetchRooms();
     } catch (err: any) {
-      message.error(err.response?.data?.message || 'Lỗi khi xóa phòng chiếu');
+      message.error(err.response?.data?.message || 'Lỗi khi xóa phòng chiếu', 6);
     }
   };
 
@@ -302,6 +305,30 @@ const Rooms: React.FC = () => {
       }
     },
     {
+      title: 'Trạng Thái Khai Thác',
+      key: 'usageStatus',
+      render: (_: any, record: Room) => {
+        const hasShowtimes = (record.showtimesCount || 0) > 0;
+        const hasBookings = (record.bookingsCount || 0) > 0;
+
+        if (hasBookings) {
+          return (
+            <Tag color="volcano" style={{ fontWeight: 'bold' }}>
+              🔒 Đã có {record.bookingsCount} vé đặt ({record.showtimesCount} suất)
+            </Tag>
+          );
+        }
+        if (hasShowtimes) {
+          return (
+            <Tag color="orange" style={{ fontWeight: 'bold' }}>
+              📅 Đang có {record.showtimesCount} suất chiếu lên lịch
+            </Tag>
+          );
+        }
+        return <Tag color="green">✅ Phòng trống (Có thể xóa)</Tag>;
+      }
+    },
+    {
       title: 'Thao tác',
       key: 'actions',
       render: (_: any, record: Room) => (
@@ -323,16 +350,24 @@ const Rooms: React.FC = () => {
             Sửa
           </Button>
 
-          <Popconfirm
-            title="Xóa phòng chiếu"
-            description="Bạn có chắc chắn muốn xóa phòng chiếu này không?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true }}
-          >
-            <Button danger icon={<DeleteOutlined />}>Xóa</Button>
-          </Popconfirm>
+          {record.hasActiveData ? (
+            <Tooltip title={`🚫 Khóa xóa: Phòng chiếu đang có ${record.showtimesCount || 0} suất chiếu và ${record.bookingsCount || 0} vé đã đặt!`}>
+              <Button danger disabled icon={<DeleteOutlined />}>
+                Xóa
+              </Button>
+            </Tooltip>
+          ) : (
+            <Popconfirm
+              title="Xóa phòng chiếu"
+              description={`Bạn có chắc chắn muốn xóa phòng chiếu "${record.name}" không?`}
+              onConfirm={() => handleDelete(record._id)}
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true }}
+            >
+              <Button danger icon={<DeleteOutlined />}>Xóa</Button>
+            </Popconfirm>
+          )}
         </Space>
       )
     }

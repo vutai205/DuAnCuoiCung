@@ -1,12 +1,35 @@
 const Room = require('../models/Room');
+const Showtime = require('../models/Showtime');
+const Booking = require('../models/Booking');
 
-// @desc    Get all rooms
+// @desc    Get all rooms with showtimes & active bookings count
 // @route   GET /api/rooms
 // @access  Public/Admin
 exports.getRooms = async (req, res) => {
     try {
-        const rooms = await Room.find({});
-        res.json(rooms);
+        const rooms = await Room.find({}).lean();
+
+        // Attach showtimes and active bookings stats to each room
+        const roomsWithStats = await Promise.all(rooms.map(async (room) => {
+            const showtimes = await Showtime.find({ room: room._id });
+            const showtimeIds = showtimes.map(s => s._id);
+
+            const activeBookingsCount = showtimeIds.length > 0
+                ? await Booking.countDocuments({
+                    showtime: { $in: showtimeIds },
+                    status: { $ne: 'cancelled' }
+                })
+                : 0;
+
+            return {
+                ...room,
+                showtimesCount: showtimes.length,
+                bookingsCount: activeBookingsCount,
+                hasActiveData: showtimes.length > 0 || activeBookingsCount > 0
+            };
+        }));
+
+        res.json(roomsWithStats);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -128,7 +151,33 @@ exports.updateRoom = async (req, res) => {
         const room = await Room.findById(req.params.id);
 
         if (!room) {
-            return res.status(404).json({ message: 'Room not found' });
+            return res.status(404).json({ message: 'Không tìm thấy phòng chiếu!' });
+        }
+
+        // Kiếm tra nếu muốn thay đổi kích thước/sơ đồ ghế khi phòng đang có vé đã đặt cho suất chiếu tương lai
+        if (
+            (req.body.rowsCount && req.body.rowsCount !== room.rowsCount) ||
+            (req.body.seatsPerRow && req.body.seatsPerRow !== room.seatsPerRow) ||
+            (Array.isArray(req.body.seatLayout) && req.body.seatLayout.length !== room.seatLayout?.length)
+        ) {
+            const futureShowtimes = await Showtime.find({
+                room: room._id,
+                startTime: { $gte: new Date() }
+            });
+
+            if (futureShowtimes.length > 0) {
+                const showtimeIds = futureShowtimes.map(s => s._id);
+                const activeBookings = await Booking.countDocuments({
+                    showtime: { $in: showtimeIds },
+                    status: { $ne: 'cancelled' }
+                });
+
+                if (activeBookings > 0) {
+                    return res.status(400).json({
+                        message: `⚠️ Không thể sửa kích thước/sơ đồ phòng chiếu này vì đang có ${activeBookings} đơn vé hợp lệ của các suất chiếu sắp tới!`
+                    });
+                }
+            }
         }
 
         room.name = req.body.name || room.name;
@@ -163,19 +212,40 @@ exports.updateRoom = async (req, res) => {
     }
 };
 
-// @desc    Delete a room
+// @desc    Delete a room (Validate no active showtimes or bookings exist)
 // @route   DELETE /api/rooms/:id
 // @access  Private/Admin
 exports.deleteRoom = async (req, res) => {
     try {
-        const room = await Room.findById(req.params.id);
+        const roomId = req.params.id;
+        const room = await Room.findById(roomId);
 
-        if (room) {
-            await room.deleteOne();
-            res.json({ message: 'Room removed' });
-        } else {
-            res.status(404).json({ message: 'Room not found' });
+        if (!room) {
+            return res.status(404).json({ message: 'Không tìm thấy phòng chiếu!' });
         }
+
+        // 1. Kiểm tra xem phòng chiếu có gắn với bất kỳ suất chiếu nào không
+        const showtimes = await Showtime.find({ room: roomId });
+        if (showtimes && showtimes.length > 0) {
+            const showtimeIds = showtimes.map(s => s._id);
+            const bookings = await Booking.find({
+                showtime: { $in: showtimeIds },
+                status: { $ne: 'cancelled' }
+            });
+
+            if (bookings.length > 0) {
+                return res.status(400).json({
+                    message: `🚫 KHÔNG THỂ XÓA: Phòng chiếu "${room.name}" đang có ${showtimes.length} suất chiếu và ${bookings.length} đơn đặt vé hợp lệ của khách hàng!`
+                });
+            }
+
+            return res.status(400).json({
+                message: `🚫 KHÔNG THỂ XÓA: Phòng chiếu "${room.name}" đang có ${showtimes.length} suất chiếu được lên lịch trong hệ thống. Vui lòng xóa các suất chiếu trước!`
+            });
+        }
+
+        await room.deleteOne();
+        res.json({ message: `Đã xóa phòng chiếu "${room.name}" thành công!` });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
