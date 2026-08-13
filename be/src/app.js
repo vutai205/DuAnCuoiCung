@@ -21,6 +21,7 @@ const bannerRoutes = require('./routes/banners');
 const paymentRoutes = require('./routes/payment');
 const foodRoutes = require('./routes/foodRoutes');
 const voucherRoutes = require('./routes/vouchers');
+const reviewRoutes = require('./routes/reviewRoutes');
 const path = require('path');
 
 // Use Routes
@@ -35,6 +36,7 @@ app.use('/api/banners', bannerRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/vouchers', voucherRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Phục vụ các file tĩnh trong thư mục uploads
 const _dirname = path.resolve();

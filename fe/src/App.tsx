@@ -48,6 +48,8 @@ function HomePage() {
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'showing' | 'upcoming'>('showing');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('all');
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -63,9 +65,61 @@ function HomePage() {
     fetchMovies();
   }, []);
 
-  const filteredMovies = activeTab === 'showing' 
-    ? movies 
-    : movies.slice().reverse();
+  // Trích xuất tự động tất cả thể loại thực tế có trong danh sách phim
+  const availableGenres = Array.from(
+    new Set(
+      movies.flatMap((m) => {
+        const list: string[] = [];
+        if (m.genre) {
+          m.genre.split(/[\/,;]+/).forEach((g: string) => {
+            const trimmed = g.trim();
+            if (trimmed) list.push(trimmed);
+          });
+        }
+        if (Array.isArray(m.genres)) {
+          m.genres.forEach((g: string) => {
+            const trimmed = typeof g === 'string' ? g.trim() : '';
+            if (trimmed) list.push(trimmed);
+          });
+        }
+        return list;
+      })
+    )
+  ).sort();
+
+  const filteredMovies = movies.filter((movie) => {
+    // Lọc theo Tab (Đang chiếu / Sắp chiếu)
+    if (activeTab === 'showing') {
+      if (movie.status && movie.status !== 'now_showing') return false;
+    } else {
+      if (movie.status !== 'coming_soon') return false;
+    }
+
+    // Lọc theo Từ khóa tìm kiếm
+    if (searchTerm.trim()) {
+      if (!movie.title.toLowerCase().includes(searchTerm.toLowerCase().trim())) {
+        return false;
+      }
+    }
+
+    // Lọc theo Thể loại
+    if (selectedGenre !== 'all') {
+      const selectedLower = selectedGenre.toLowerCase().trim();
+      const movieGenreStr = (movie.genre || '').toLowerCase();
+      const movieGenresArr = Array.isArray(movie.genres)
+        ? movie.genres.map((g: string) => (typeof g === 'string' ? g.toLowerCase().trim() : ''))
+        : [];
+
+      const isMatchInString = movieGenreStr.includes(selectedLower);
+      const isMatchInArray = movieGenresArr.some((g: string) => g.includes(selectedLower));
+
+      if (!isMatchInString && !isMatchInArray) {
+        return false;
+      }
+    }
+
+    return true;
+  });
 
   return (
     <div className="home-page-container">
@@ -74,20 +128,66 @@ function HomePage() {
 
       {/* Main Content Area */}
       <div className="main-content-wrapper">
-        {/* Navigation Tabs */}
-        <div className="movie-tabs-container">
-          <button
-            className={`tab-btn ${activeTab === 'showing' ? 'active' : ''}`}
-            onClick={() => setActiveTab('showing')}
-          >
-            🔥 PHIM ĐANG CHIẾU
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
-            onClick={() => setActiveTab('upcoming')}
-          >
-            ⏳ PHIM SẮP CHIẾU
-          </button>
+        {/* Navigation Tabs & Filter Bar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+          <div className="movie-tabs-container">
+            <button
+              className={`tab-btn ${activeTab === 'showing' ? 'active' : ''}`}
+              onClick={() => setActiveTab('showing')}
+            >
+              🔥 PHIM ĐANG CHIẾU
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
+              onClick={() => setActiveTab('upcoming')}
+            >
+              ⏳ PHIM SẮP CHIẾU
+            </button>
+          </div>
+
+          {/* Search & Genre Filter */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: '10px' }}>
+            <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="🔍 Tìm kiếm phim theo tên..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  backgroundColor: '#1f2937',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            <select
+              value={selectedGenre}
+              onChange={(e) => setSelectedGenre(e.target.value)}
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                backgroundColor: '#1f2937',
+                color: '#fff',
+                fontSize: '14px',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              <option value="all">🎬 Tất Cả Thể Loại</option>
+              {availableGenres.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Movies Grid Section */}
@@ -98,7 +198,9 @@ function HomePage() {
               <span>Đang tải danh sách phim...</span>
             </div>
           ) : filteredMovies.length === 0 ? (
-            <div className="no-movies-box">Hiện tại chưa có phim nào trong mục này.</div>
+            <div className="no-movies-box" style={{ padding: '40px', textAlign: 'center', backgroundColor: '#111827', borderRadius: '12px', color: '#9ca3af' }}>
+              Không tìm thấy phim nào phù hợp với bộ lọc hiện tại.
+            </div>
           ) : (
             <div className="movie-grid">
               {filteredMovies.map((movie) => (
@@ -111,6 +213,11 @@ function HomePage() {
                         className="movie-poster" 
                       />
                       <span className="duration-tag">{movie.duration} phút</span>
+                      {movie.format && (
+                        <span style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: '#e50914', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>
+                          {movie.format}
+                        </span>
+                      )}
                       <div className="poster-overlay">
                         <span className="btn-overlay-book">
                           MUA VÉ NGAY
@@ -119,7 +226,7 @@ function HomePage() {
                     </div>
                   </Link>
                   <div className="movie-info">
-                    <span className="movie-genre">{movie.genre}</span>
+                    <span className="movie-genre">{movie.genre || (movie.genres ? movie.genres.join(', ') : '')}</span>
                     <Link to={`/movie/${movie._id}`} className="movie-title-link">
                       <h3 className="movie-title">{movie.title}</h3>
                     </Link>

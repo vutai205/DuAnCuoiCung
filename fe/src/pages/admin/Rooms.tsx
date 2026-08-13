@@ -37,6 +37,7 @@ interface Room {
   _id: string;
   name: string;
   type?: string;
+  status?: 'active' | 'maintenance' | string;
   totalSeats: number;
   rowsCount?: number;
   seatsPerRow?: number;
@@ -96,6 +97,7 @@ const Rooms: React.FC = () => {
     form.setFieldsValue({
       name: room.name,
       type: room.type || '2D Standard',
+      status: (room as any).status || 'active',
       rowsCount,
       seatsPerRow,
       totalSeats: room.totalSeats || (rowsCount * seatsPerRow)
@@ -259,6 +261,82 @@ const Rooms: React.FC = () => {
     return '🟢 Thường';
   };
 
+  // Group current seat layout by rows for rendering visual seat map
+  const layoutRowsMap: { [row: string]: SeatItem[] } = {};
+  currentSeatLayout.forEach(s => {
+    const match = s.seatName.match(/^([A-Z]+)(\d+)$/);
+    const rowLetter = match ? match[1] : 'A';
+    if (!layoutRowsMap[rowLetter]) layoutRowsMap[rowLetter] = [];
+    layoutRowsMap[rowLetter].push(s);
+  });
+  const rowLettersList = Object.keys(layoutRowsMap).sort();
+
+  // Dynamic Add / Remove Rows & Columns
+  const handleAddRow = () => {
+    const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+    const currentRowsCount = rowLettersList.length;
+    if (currentRowsCount >= rowsLetters.length) {
+      message.warning('Đã đạt giới hạn tối đa 16 hàng ghế (A-P)!');
+      return;
+    }
+    const nextRowLetter = rowsLetters[currentRowsCount];
+    const colsCount = layoutRowsMap[rowLettersList[0]]?.length || 10;
+    const newSeats: SeatItem[] = [];
+    for (let j = 1; j <= colsCount; j++) {
+      newSeats.push({
+        seatName: `${nextRowLetter}${j}`,
+        type: 'regular',
+        status: 'active'
+      });
+    }
+    setCurrentSeatLayout(prev => [...prev, ...newSeats]);
+    message.success(`⚡ Đã thêm Hàng ghế ${nextRowLetter}!`);
+  };
+
+  const handleRemoveRow = () => {
+    if (rowLettersList.length <= 1) {
+      message.warning('Phòng chiếu phải giữ tối thiểu 1 hàng ghế!');
+      return;
+    }
+    const lastRowLetter = rowLettersList[rowLettersList.length - 1];
+    setCurrentSeatLayout(prev => prev.filter(s => !s.seatName.startsWith(lastRowLetter)));
+    message.info(`Đã bớt Hàng ghế ${lastRowLetter}`);
+  };
+
+  const handleAddColumn = () => {
+    const colsCount = layoutRowsMap[rowLettersList[0]]?.length || 10;
+    if (colsCount >= 24) {
+      message.warning('Tối đa 24 cột ghế mỗi hàng!');
+      return;
+    }
+    const nextCol = colsCount + 1;
+    setCurrentSeatLayout(prev => {
+      const nextLayout = [...prev];
+      rowLettersList.forEach(r => {
+        nextLayout.push({
+          seatName: `${r}${nextCol}`,
+          type: 'regular',
+          status: 'active'
+        });
+      });
+      return nextLayout;
+    });
+    message.success(`⚡ Đã thêm cột ghế thứ ${nextCol}!`);
+  };
+
+  const handleRemoveColumn = () => {
+    const colsCount = layoutRowsMap[rowLettersList[0]]?.length || 10;
+    if (colsCount <= 1) {
+      message.warning('Mỗi hàng phải có ít nhất 1 ghế!');
+      return;
+    }
+    setCurrentSeatLayout(prev => prev.filter(s => {
+      const match = s.seatName.match(/\d+/);
+      return match ? parseInt(match[0]) < colsCount : true;
+    }));
+    message.info(`Đã bớt cột ghế thứ ${colsCount}`);
+  };
+
   const columns = [
     {
       title: 'Tên Phòng chiếu',
@@ -302,6 +380,25 @@ const Rooms: React.FC = () => {
         if (typeStr.includes('4DX')) return <Tag color="cyan">4DX</Tag>;
         if (typeStr.includes('Sweetbox') || typeStr.includes('Đôi')) return <Tag color="magenta">💕 Sweetbox (Phòng Đôi)</Tag>;
         return <Tag color="green">{typeStr}</Tag>;
+      }
+    },
+    {
+      title: 'Trạng Thái Phòng',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        if (status === 'maintenance') {
+          return (
+            <Tag color="red" style={{ fontWeight: 'bold', padding: '2px 8px' }}>
+              🛠️ Tạm ngưng (Bảo trì)
+            </Tag>
+          );
+        }
+        return (
+          <Tag color="success" style={{ fontWeight: 'bold', padding: '2px 8px' }}>
+            🟢 Hoạt động tốt
+          </Tag>
+        );
       }
     },
     {
@@ -373,16 +470,6 @@ const Rooms: React.FC = () => {
     }
   ];
 
-  // Group current seat layout by rows for rendering visual seat map
-  const layoutRowsMap: { [row: string]: SeatItem[] } = {};
-  currentSeatLayout.forEach(s => {
-    const match = s.seatName.match(/^([A-Z]+)(\d+)$/);
-    const rowLetter = match ? match[1] : 'A';
-    if (!layoutRowsMap[rowLetter]) layoutRowsMap[rowLetter] = [];
-    layoutRowsMap[rowLetter].push(s);
-  });
-  const rowLettersList = Object.keys(layoutRowsMap).sort();
-
   return (
     <div style={{ padding: '24px' }}>
       <Card
@@ -450,6 +537,17 @@ const Rooms: React.FC = () => {
               <Select.Option value="IMAX 3D">IMAX 3D (Màn Hình Cực Đại)</Select.Option>
               <Select.Option value="4DX">4DX (Hiệu Ứng Rung Lắc / Gió / Nước)</Select.Option>
               <Select.Option value="Phòng Đôi (Sweetbox)">💕 Sweetbox (Phòng Đôi Lãng Mạn)</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="Trạng Thái Hoạt Động Của Phòng"
+            initialValue="active"
+          >
+            <Select>
+              <Select.Option value="active">🟢 Đang hoạt động tốt</Select.Option>
+              <Select.Option value="maintenance">🛠️ Tạm ngưng phục vụ (Đang bảo trì)</Select.Option>
             </Select>
           </Form.Item>
 
@@ -528,32 +626,44 @@ const Rooms: React.FC = () => {
             </div>
           </div>
 
-          {/* Cài đặt chế độ chọn (Brush palette) */}
+          {/* Thanh công cụ Thêm/Bớt Hàng & Cột & Chế độ vẽ Bút */}
           <div style={{ background: '#1e293b', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <div>
-              <span style={{ fontWeight: 'bold', marginRight: 12, color: '#94a3b8' }}>BÚT CHỌN LOẠI GHẾ:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontWeight: 'bold', color: '#94a3b8' }}>BÚT VẼ GHẾ:</span>
               <Radio.Group
                 value={selectedBrush}
                 onChange={(e) => setSelectedBrush(e.target.value)}
                 buttonStyle="solid"
               >
                 <Radio.Button value="regular" style={{ background: selectedBrush === 'regular' ? '#22c55e' : undefined, color: selectedBrush === 'regular' ? '#fff' : undefined }}>
-                  🟢 Ghế Thường
+                  🟢 Thường
                 </Radio.Button>
                 <Radio.Button value="vip" style={{ background: selectedBrush === 'vip' ? '#eab308' : undefined, color: selectedBrush === 'vip' ? '#fff' : undefined }}>
-                  ⭐ Ghế VIP
+                  ⭐ VIP
                 </Radio.Button>
                 <Radio.Button value="couple" style={{ background: selectedBrush === 'couple' ? '#ec4899' : undefined, color: selectedBrush === 'couple' ? '#fff' : undefined }}>
-                  💕 Ghế Đôi
+                  💕 Đôi
                 </Radio.Button>
                 <Radio.Button value="maintenance" style={{ background: selectedBrush === 'maintenance' ? '#ef4444' : undefined, color: selectedBrush === 'maintenance' ? '#fff' : undefined }}>
-                  🛠️ Đang bảo trì / Hỏng
+                  🛠️ Bảo Trì
                 </Radio.Button>
               </Radio.Group>
             </div>
 
-            <div style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
-              👉 *Bấm trực tiếp vào ghế để đổi loại ghế theo bút chọn*
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: 'bold', color: '#94a3b8' }}>KÍCH THƯỚC:</span>
+              <Button size="small" onClick={handleAddRow} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none' }}>
+                ➕ Hàng
+              </Button>
+              <Button size="small" onClick={handleRemoveRow} danger>
+                ➖ Hàng
+              </Button>
+              <Button size="small" onClick={handleAddColumn} style={{ backgroundColor: '#3b82f6', color: '#fff', border: 'none' }}>
+                ➕ Cột
+              </Button>
+              <Button size="small" onClick={handleRemoveColumn} danger>
+                ➖ Cột
+              </Button>
             </div>
           </div>
 

@@ -19,6 +19,10 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'Tài khoản không tồn tại, vui lòng đăng nhập lại!' });
             }
 
+            if (req.user.status === false) {
+                return res.status(403).json({ message: '⛔ Tài khoản của bạn đã bị khóa bởi Quản trị viên!' });
+            }
+
             return next();
         } catch (error) {
             return res.status(401).json({ message: 'Không có quyền truy cập, token không hợp lệ!' });
@@ -38,4 +42,27 @@ const admin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin };
+const staffOrAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Không có quyền truy cập, chỉ dành cho Nhân viên hoặc Admin!' });
+    }
+};
+
+const protectAdminOrStaff = staffOrAdmin;
+
+const optionalAuth = async (req, res, next) => {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+            req.user = await User.findById(decoded.id).select('-password');
+        } catch (error) {
+            // Ignore invalid token for optional auth
+        }
+    }
+    next();
+};
+
+module.exports = { protect, admin, staffOrAdmin, protectAdminOrStaff, optionalAuth };

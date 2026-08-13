@@ -117,7 +117,16 @@ const generateLayoutByType = (type = '2D Standard', actualRows = 8, actualCols =
 // @access  Private/Admin
 exports.createRoom = async (req, res) => {
     try {
-        const { name, type = '2D Standard', rowsCount = 8, seatsPerRow = 10, totalSeats: reqSeats } = req.body;
+        const { name, type = '2D Standard', rowsCount = 8, seatsPerRow = 10, totalSeats: reqSeats, status = 'active' } = req.body;
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: 'Tên phòng chiếu không được để trống!' });
+        }
+
+        const existingRoom = await Room.findOne({ name: name.trim() });
+        if (existingRoom) {
+            return res.status(400).json({ message: `Tên phòng chiếu "${name.trim()}" đã tồn tại! Vui lòng nhập tên khác.` });
+        }
 
         const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
         const actualRows = Math.min(rowsCount || 8, rowsLetters.length);
@@ -128,11 +137,12 @@ exports.createRoom = async (req, res) => {
         const seatLayout = generateLayoutByType(type, actualRows, actualCols, totalSeats);
 
         const room = new Room({
-            name,
+            name: name.trim(),
             type,
             rowsCount: actualRows,
             seatsPerRow: actualCols,
             totalSeats,
+            status,
             seatLayout
         });
 
@@ -154,7 +164,19 @@ exports.updateRoom = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy phòng chiếu!' });
         }
 
-        // Kiếm tra nếu muốn thay đổi kích thước/sơ đồ ghế khi phòng đang có vé đã đặt cho suất chiếu tương lai
+        if (req.body.name && req.body.name.trim() !== room.name) {
+            const existingRoom = await Room.findOne({ name: req.body.name.trim() });
+            if (existingRoom) {
+                return res.status(400).json({ message: `Tên phòng chiếu "${req.body.name.trim()}" đã tồn tại!` });
+            }
+            room.name = req.body.name.trim();
+        }
+
+        if (req.body.status) {
+            room.status = req.body.status;
+        }
+
+        // Kiểm tra nếu muốn thay đổi kích thước/sơ đồ ghế khi phòng đang có vé đã đặt cho suất chiếu tương lai
         if (
             (req.body.rowsCount && req.body.rowsCount !== room.rowsCount) ||
             (req.body.seatsPerRow && req.body.seatsPerRow !== room.seatsPerRow) ||
@@ -180,7 +202,6 @@ exports.updateRoom = async (req, res) => {
             }
         }
 
-        room.name = req.body.name || room.name;
         if (req.body.type) room.type = req.body.type;
 
         // Direct seat layout update (from visual seat layout editor)

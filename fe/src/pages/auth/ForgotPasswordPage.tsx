@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
       {success && <div className="auth-alert auth-alert--success">{success}</div>}
 
       {step === 1 ? (
-        <form className="auth-form" onSubmit={handleSendOtp}>
+        <form className="auth-form" onSubmit={handleSendOtp} noValidate>
           <div className="auth-field">
             <label htmlFor="email">EMAIL ĐÃ ĐĂNG KÝ</label>
             <div className="auth-input-wrap">
@@ -96,7 +96,6 @@ export default function ForgotPasswordPage() {
                 placeholder="ban@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
                 autoComplete="email"
               />
             </div>
@@ -113,7 +112,7 @@ export default function ForgotPasswordPage() {
           </p>
         </form>
       ) : (
-        <form className="auth-form" onSubmit={handleResetPassword}>
+        <form className="auth-form" onSubmit={handleResetPassword} noValidate>
           <div className="auth-field">
             <label htmlFor="otp">MÃ XÁC MINH OTP (6 CHỮ SỐ)</label>
             <div className="auth-input-wrap">
@@ -125,7 +124,6 @@ export default function ForgotPasswordPage() {
                 placeholder="VD: 123456"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
-                required
                 style={{ letterSpacing: '4px', fontWeight: 'bold', fontSize: '1.1rem' }}
               />
             </div>
@@ -141,7 +139,6 @@ export default function ForgotPasswordPage() {
                 placeholder="Tối thiểu 6 ký tự"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                required
               />
             </div>
           </div>
@@ -156,7 +153,6 @@ export default function ForgotPasswordPage() {
                 placeholder="Xác nhận lại mật khẩu mới"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                required
               />
             </div>
           </div>

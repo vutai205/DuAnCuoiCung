@@ -33,11 +33,11 @@ exports.getShowtimesByMovie = async (req, res) => {
             movie: req.params.movieId,
             startTime: { $gte: new Date() }
         })
-        .populate('room', 'name') // Chỉ cần lấy tên phòng
+        .populate('room', 'name type status') // Lấy tên, loại & trạng thái phòng
         .sort({ startTime: 1 }); // Sắp xếp giờ chiếu tăng dần
 
-        // Lọc bỏ các suất chiếu mồ côi mà phòng đã bị xóa trước đó
-        const validShowtimes = showtimes.filter(st => st.room != null);
+        // Lọc bỏ các suất chiếu mồ côi hoặc thuộc phòng chiếu ĐANG BẢO TRÌ
+        const validShowtimes = showtimes.filter(st => st.room != null && st.room.status !== 'maintenance');
 
         // 2. Nhóm các suất chiếu theo Ngày (YYYY-MM-DD) theo Múi giờ Việt Nam (UTC+7)
         const grouped = validShowtimes.reduce((acc, showtime) => {
@@ -112,6 +112,8 @@ exports.getShowtimeSeats = async (req, res) => {
             showtimeId,
             room: showtime.room.name,
             ticketPrice: showtime.ticketPrice,
+            vipSurcharge: showtime.vipSurcharge || 15000,
+            coupleSurcharge: showtime.coupleSurcharge || 20000,
             seats: seatStatuses
         });
 
@@ -127,26 +129,81 @@ exports.getShowtimes = async (req, res) => {
     try {
         const showtimes = await Showtime.find({}).populate('movie room').sort({ startTime: 1 }).lean();
         
-        const showtimeIds = showtimes.map(st => st._id);
-        const activeBookings = await Booking.aggregate([
-            { $match: { showtime: { $in: showtimeIds }, status: { $ne: 'cancelled' } } },
-            { $group: { _id: '$showtime', totalSeats: { $sum: { $size: '$seats' } } } }
-        ]);
+        const showtimeIds = showtimes.map(st => st._id).filter(id => id != null);
 
-        const bookingMap = {};
-        activeBookings.forEach(b => {
-            bookingMap[b._id.toString()] = b.totalSeats;
-        });
+        let bookingMap = {};
+        if (showtimeIds.length > 0) {
+            try {
+                const activeBookings = await Booking.aggregate([
+                    { $match: { showtime: { $in: showtimeIds }, status: { $ne: 'cancelled' } } },
+                    { 
+                        $group: { 
+                            _id: '$showtime', 
+                            totalSeats: { 
+                                $sum: { 
+                                    $cond: { 
+                                        if: { $isArray: '$seats' }, 
+                                        then: { $size: '$seats' }, 
+                                        else: 0 
+                                    } 
+                                } 
+                            } 
+                        } 
+                    }
+                ]);
+
+                activeBookings.forEach(b => {
+                    if (b && b._id) {
+                        bookingMap[b._id.toString()] = b.totalSeats || 0;
+                    }
+                });
+            } catch (aggErr) {
+                console.error('Lỗi tính số ghế đã đặt:', aggErr);
+            }
+        }
 
         const showtimesWithBookings = showtimes.map(st => ({
             ...st,
-            bookedSeatsCount: bookingMap[st._id.toString()] || 0
+            bookedSeatsCount: (st && st._id && bookingMap[st._id.toString()]) ? bookingMap[st._id.toString()] : 0
         }));
 
         res.json(showtimesWithBookings);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Lỗi getShowtimes:', error);
+        res.status(500).json({ message: error.message || 'Lỗi server khi lấy danh sách suất chiếu' });
     }
+};
+
+const Movie = require('../models/Movie');
+
+// Helper: Kiểm tra tương thích giữa định dạng phim và loại phòng chiếu
+const checkRoomMovieCompatibility = (room, movie) => {
+    if (room.status === 'maintenance') {
+        return `⚠️ Phòng chiếu "${room.name}" đang trong trạng thái BẢO TRÌ! Không thể xếp suất chiếu.`;
+    }
+
+    if (movie.status === 'ended') {
+        return `⚠️ Phim "${movie.title}" ĐÃ NGỪNG CHIẾU! Không thể tạo thêm suất chiếu mới.`;
+    }
+
+    const movieFormat = (movie.format || '2D').toUpperCase();
+    const roomType = (room.type || room.name || '').toUpperCase();
+
+    if (movieFormat.includes('IMAX')) {
+        if (!roomType.includes('IMAX')) {
+            return `⚠️ Phim định dạng "${movie.format}" chỉ được chiếu ở Phòng chiếu IMAX! (Phòng "${room.name}" là loại ${room.type})`;
+        }
+    } else if (movieFormat.includes('4DX')) {
+        if (!roomType.includes('4DX')) {
+            return `⚠️ Phim định dạng "${movie.format}" chỉ được chiếu ở Phòng chiếu 4DX! (Phòng "${room.name}" là loại ${room.type})`;
+        }
+    } else if (movieFormat.includes('3D')) {
+        if (!roomType.includes('IMAX') && !roomType.includes('4DX') && !roomType.includes('VIP') && !roomType.includes('3D')) {
+            return `⚠️ Phim 3D yêu cầu phòng chiếu có hỗ trợ 3D/IMAX/VIP!`;
+        }
+    }
+
+    return null;
 };
 
 // @desc    Create a showtime
@@ -154,7 +211,7 @@ exports.getShowtimes = async (req, res) => {
 // @access  Private/Admin
 exports.createShowtime = async (req, res) => {
     try {
-        const { movie, room, startTime, endTime, ticketPrice } = req.body;
+        const { movie: movieId, room: roomId, startTime, endTime, ticketPrice, vipSurcharge = 15000, coupleSurcharge = 20000, status = 'upcoming' } = req.body;
         
         const newStart = new Date(startTime);
         const newEnd = new Date(endTime);
@@ -167,8 +224,24 @@ exports.createShowtime = async (req, res) => {
             return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu!' });
         }
 
+        // 🛑 Kiểm tra tương thích Loại Phòng & Định Dạng Phim
+        const roomDoc = await Room.findById(roomId);
+        const movieDoc = await Movie.findById(movieId);
+
+        if (!roomDoc) {
+            return res.status(404).json({ message: 'Không tìm thấy phòng chiếu!' });
+        }
+        if (!movieDoc) {
+            return res.status(404).json({ message: 'Không tìm thấy thông tin phim!' });
+        }
+
+        const compatError = checkRoomMovieCompatibility(roomDoc, movieDoc);
+        if (compatError) {
+            return res.status(400).json({ message: compatError });
+        }
+
         // 🛑 Kiểm tra trùng lịch suất chiếu cùng phòng
-        const conflict = await checkShowtimeOverlap(room, newStart, newEnd);
+        const conflict = await checkShowtimeOverlap(roomId, newStart, newEnd);
         if (conflict) {
             const conflictMovieTitle = conflict.movie?.title || 'Phim khác';
             const conflictRoomName = conflict.room?.name || 'Phòng chiếu';
@@ -180,11 +253,14 @@ exports.createShowtime = async (req, res) => {
         }
 
         const showtime = new Showtime({
-            movie,
-            room,
+            movie: movieId,
+            room: roomId,
             startTime,
             endTime,
-            ticketPrice
+            ticketPrice,
+            vipSurcharge,
+            coupleSurcharge,
+            status
         });
 
         const createdShowtime = await showtime.save();
@@ -211,9 +287,18 @@ exports.createBatchShowtimes = async (req, res) => {
             return res.status(400).json({ message: 'Tất cả các suất chiếu được chọn đều trong quá khứ, không thể lưu!' });
         }
 
-        // 🛑 Kiểm tra loại bỏ từng suất chiếu bị trùng lịch DB
+        // 🛑 Kiểm tra loại bỏ từng suất chiếu bị trùng lịch DB, Phòng chiếu đang Bảo trì hoặc Phim đã Ngừng chiếu
         const nonConflictingShowtimes = [];
         for (const st of validShowtimes) {
+            const movieDoc = await Movie.findById(st.movie);
+            if (!movieDoc || movieDoc.status === 'ended') {
+                continue; // Chặn phim đã ngừng chiếu
+            }
+
+            const roomDoc = await Room.findById(st.room);
+            if (!roomDoc || roomDoc.status === 'maintenance') {
+                continue; // Chặn phòng chiếu đang bảo trì
+            }
             const conflict = await checkShowtimeOverlap(st.room, st.startTime, st.endTime);
             if (!conflict) {
                 nonConflictingShowtimes.push(st);
@@ -221,7 +306,7 @@ exports.createBatchShowtimes = async (req, res) => {
         }
 
         if (nonConflictingShowtimes.length === 0) {
-            return res.status(400).json({ message: 'Tất cả các suất chiếu gửi lên đều bị trùng lịch với suất chiếu hiện có trong rạp!' });
+            return res.status(400).json({ message: 'Tất cả các suất chiếu gửi lên đều bị trùng lịch, thuộc phòng BẢO TRÌ hoặc thuộc phim ĐÃ NGỪNG CHIẾU!' });
         }
 
         const createdShowtimes = await Showtime.insertMany(nonConflictingShowtimes);

@@ -34,8 +34,8 @@ import { getToken } from '../../services/authApi';
 
 interface ShowtimeItem {
   _id: string;
-  movie: { _id: string; title: string; duration: number } | string;
-  room: { _id: string; name: string } | string;
+  movie: { _id: string; title: string; duration: number } | any;
+  room: { _id: string; name: string; status?: string } | any;
   startTime: string;
   endTime: string;
   ticketPrice: number;
@@ -153,6 +153,32 @@ const Showtimes: React.FC = () => {
   const handleSubmit = async (values: any) => {
     try {
       const selectedMovie = movies.find(m => m._id === values.movie);
+      const selectedRoom = rooms.find(r => r._id === values.room);
+
+      if (selectedMovie && selectedMovie.status === 'ended') {
+        message.error(`⚠️ Phim "${selectedMovie.title}" ĐÃ NGỪNG CHIẾU! Không thể tạo/sửa suất chiếu.`);
+        return;
+      }
+
+      if (selectedRoom && selectedRoom.status === 'maintenance') {
+        message.error(`⚠️ Phòng chiếu "${selectedRoom.name}" đang BẢO TRÌ! Không thể tạo suất chiếu.`);
+        return;
+      }
+
+      if (selectedMovie && selectedRoom) {
+        const format = (selectedMovie.format || '2D').toUpperCase();
+        const roomType = (selectedRoom.type || selectedRoom.name || '').toUpperCase();
+
+        if (format.includes('IMAX') && !roomType.includes('IMAX')) {
+          message.error(`⚠️ Phim "${selectedMovie.title}" (${selectedMovie.format}) yêu cầu phòng chiếu IMAX!`);
+          return;
+        }
+        if (format.includes('4DX') && !roomType.includes('4DX')) {
+          message.error(`⚠️ Phim "${selectedMovie.title}" (${selectedMovie.format}) yêu cầu phòng chiếu 4DX!`);
+          return;
+        }
+      }
+
       const duration = selectedMovie ? selectedMovie.duration || 120 : 120;
       
       const startTime = values.startTime.toDate();
@@ -189,7 +215,9 @@ const Showtimes: React.FC = () => {
         room: values.room,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
-        ticketPrice: values.ticketPrice
+        ticketPrice: values.ticketPrice,
+        vipSurcharge: values.vipSurcharge || 15000,
+        coupleSurcharge: values.coupleSurcharge || 20000
       };
 
       if (editingShowtime) {
@@ -230,6 +258,16 @@ const Showtimes: React.FC = () => {
 
     if (!selectedMovie || !selectedRoom) {
       message.error('Vui lòng chọn phim và phòng chiếu hợp lệ');
+      return;
+    }
+
+    if (selectedMovie.status === 'ended') {
+      message.error(`⚠️ Phim "${selectedMovie.title}" ĐÃ NGỪNG CHIẾU! Không thể tạo suất chiếu mới.`);
+      return;
+    }
+
+    if (selectedRoom.status === 'maintenance') {
+      message.error(`⚠️ Phòng chiếu "${selectedRoom.name}" đang BẢO TRÌ! Không thể tạo suất chiếu tự động.`);
       return;
     }
 
@@ -489,6 +527,15 @@ const Showtimes: React.FC = () => {
       render: (_: any, record: ShowtimeItem) => {
         const start = new Date(record.startTime);
         const end = record.endTime ? new Date(record.endTime) : start;
+
+        const roomStatus = record.room && typeof record.room === 'object' ? record.room.status : null;
+        if (roomStatus === 'maintenance') {
+          return (
+            <div style={{ whiteSpace: 'nowrap' }}>
+              <Tag color="red" style={{ fontWeight: 'bold', margin: 0 }}>🛠️ Phòng bảo trì (Đã ẩn)</Tag>
+            </div>
+          );
+        }
 
         return (
           <div style={{ whiteSpace: 'nowrap' }}>
@@ -790,11 +837,14 @@ const Showtimes: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng chọn phim!' }]}
           >
             <Select placeholder="Chọn bộ phim chiếu">
-              {movies.map(m => (
-                <Select.Option key={m._id} value={m._id}>
-                  {m.title} ({m.duration} phút)
-                </Select.Option>
-              ))}
+              {movies.map(m => {
+                const isEnded = m.status === 'ended';
+                return (
+                  <Select.Option key={m._id} value={m._id} disabled={isEnded}>
+                    {m.title} {isEnded ? ' (🔴 Đã ngừng chiếu - Khóa)' : `(${m.duration} phút)`}
+                  </Select.Option>
+                );
+              })}
             </Select>
           </Form.Item>
 
@@ -804,11 +854,14 @@ const Showtimes: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng chọn phòng chiếu!' }]}
           >
             <Select placeholder="Chọn phòng chiếu">
-              {rooms.map(r => (
-                <Select.Option key={r._id} value={r._id}>
-                  {r.name} ({r.totalSeats} ghế)
-                </Select.Option>
-              ))}
+              {rooms.map(r => {
+                const isMaintenance = r.status === 'maintenance';
+                return (
+                  <Select.Option key={r._id} value={r._id} disabled={isMaintenance}>
+                    {r.name} {isMaintenance ? ' (🛠️ Đang bảo trì - Khóa)' : `(${r.totalSeats} ghế)`}
+                  </Select.Option>
+                );
+              })}
             </Select>
           </Form.Item>
 
@@ -861,11 +914,14 @@ const Showtimes: React.FC = () => {
               rules={[{ required: true, message: 'Vui lòng chọn phim!' }]}
             >
               <Select placeholder="Chọn bộ phim chiếu">
-                {movies.map(m => (
-                  <Select.Option key={m._id} value={m._id}>
-                    {m.title} ({m.duration} phút)
-                  </Select.Option>
-                ))}
+                {movies.map(m => {
+                  const isEnded = m.status === 'ended';
+                  return (
+                    <Select.Option key={m._id} value={m._id} disabled={isEnded}>
+                      {m.title} {isEnded ? ' (🔴 Đã ngừng chiếu - Khóa)' : `(${m.duration} phút)`}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             </Form.Item>
 
@@ -875,11 +931,14 @@ const Showtimes: React.FC = () => {
               rules={[{ required: true, message: 'Vui lòng chọn phòng!' }]}
             >
               <Select placeholder="Chọn phòng chiếu">
-                {rooms.map(r => (
-                  <Select.Option key={r._id} value={r._id}>
-                    {r.name}
-                  </Select.Option>
-                ))}
+                {rooms.map(r => {
+                  const isMaintenance = r.status === 'maintenance';
+                  return (
+                    <Select.Option key={r._id} value={r._id} disabled={isMaintenance}>
+                      {r.name} {isMaintenance ? ' (🛠️ Đang bảo trì - Khóa)' : ''}
+                    </Select.Option>
+                  );
+                })}
               </Select>
             </Form.Item>
 

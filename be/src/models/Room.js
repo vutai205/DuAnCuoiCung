@@ -6,6 +6,7 @@ const roomSchema = new mongoose.Schema({
     totalSeats: { type: Number, required: true },
     rowsCount: { type: Number, default: 8 },
     seatsPerRow: { type: Number, default: 10 },
+    status: { type: String, enum: ['active', 'maintenance'], default: 'active' },
     seatLayout: [{
         seatName: { type: String, required: true },
         type: { type: String, enum: ['regular', 'vip', 'couple', 'maintenance'], default: 'regular' },

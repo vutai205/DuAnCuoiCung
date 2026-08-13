@@ -3,10 +3,12 @@ export interface Movie {
   title: string;
   description: string;
   duration: number;
-  genre: string;
-  language: string;
+  genre?: string;
+  genres?: string[];
+  format?: string;
+  language?: string;
   releaseDate: string;
   poster: string;
-  trailer: string;
-  status: boolean;
+  trailer?: string;
+  status?: 'now_showing' | 'coming_soon' | 'ended' | boolean;
 }
