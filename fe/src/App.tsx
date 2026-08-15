@@ -21,6 +21,8 @@ import FoodList from "./app/pages/admin/Food/FoodList";
 import CustomerList from "./app/pages/admin/Customer/CustomerList";
 import BookingList from "./app/pages/admin/Booking/BookingList";
 import VoucherManager from "./pages/admin/VoucherManager";
+import ReviewManager from "./pages/admin/ReviewManager";
+import ContactManager from "./pages/admin/ContactManager";
 
 // Customer components
 import Header from "./app/components/Header/Header";
@@ -30,6 +32,7 @@ import MemberCard from "./app/pages/Profile/MemberCard";
 import BannerSlider from "./app/components/BannerSlider/BannerSlider";
 import MovieDetailPage from "./pages/customer/MovieDetailPage";
 import BookingPage from "./pages/customer/BookingPage";
+import ContactPage from "./pages/customer/ContactPage";
 import PaymentSuccessPage from "./pages/customer/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/customer/PaymentFailedPage";
 
@@ -267,6 +270,7 @@ function App() {
         <Route path="/member-card" element={<MemberCard />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failed" element={<PaymentFailedPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -285,6 +289,8 @@ function App() {
           <Route path="users" element={<UserManager />} />
           <Route path="foods" element={<FoodList />} />
           <Route path="vouchers" element={<VoucherManager />} />
+          <Route path="reviews" element={<ReviewManager />} />
+          <Route path="contacts" element={<ContactManager />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="bookings" element={<BookingList />} />
         </Route>

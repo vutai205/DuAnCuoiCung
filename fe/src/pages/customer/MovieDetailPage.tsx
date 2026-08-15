@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
+import { message } from 'antd';
 import { getAuthUser, getToken } from '../../services/authApi';
 import './MovieDetailPage.css';
 
@@ -185,7 +186,14 @@ const MovieDetailPage: React.FC = () => {
                           <div
                             key={st._id}
                             className="showtime-pill-card"
-                            onClick={() => navigate(`/booking/${st._id}`)}
+                            onClick={() => {
+                              const currentUser = getAuthUser();
+                              if (currentUser && currentUser.role === 'admin') {
+                                message.error('🚫 Tài khoản Quản trị viên (Admin) không được phép thực hiện mua vé! Vui lòng dùng tài khoản Khách hàng.');
+                                return;
+                              }
+                              navigate(`/booking/${st._id}`);
+                            }}
                           >
                             <span className="st-time">{dayjs(st.startTime).format('HH:mm')}</span>
                             <span className="st-room">{st.room?.name || 'Phòng chiếu'}</span>
@@ -450,6 +458,23 @@ const MovieReviewSection: React.FC<{ movieId: string }> = ({ movieId }) => {
               </div>
 
               <p style={{ color: '#d1d5db', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>{rev.comment}</p>
+
+              {/* Phản hồi từ Ban quản trị Admin */}
+              {rev.adminReply && (
+                <div style={{ marginTop: '12px', padding: '10px 14px', backgroundColor: 'rgba(229, 9, 20, 0.08)', borderLeft: '3px solid #e50914', borderRadius: '8px' }}>
+                  <div style={{ fontWeight: 'bold', color: '#ff4d4f', fontSize: '13px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>👑 Phản hồi từ TNA Cinema:</span>
+                    {rev.adminReplyAt && (
+                      <span style={{ fontSize: '11px', fontWeight: 'normal', color: '#9ca3af' }}>
+                        ({dayjs(rev.adminReplyAt).format('DD/MM/YYYY HH:mm')})
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: '#e5e7eb', fontSize: '13.5px', margin: 0, lineHeight: 1.5 }}>
+                    {rev.adminReply}
+                  </p>
+                </div>
+              )}
             </div>
           ))
         )}

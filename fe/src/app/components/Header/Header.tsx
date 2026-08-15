@@ -23,6 +23,8 @@ export default function Header() {
         navigate("/");
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (target === "contact") {
+      navigate("/contact");
     } else if (target === "showtimes") {
       if (location.pathname !== "/") {
         navigate("/");
@@ -86,6 +88,7 @@ export default function Header() {
           <button className="nav-btn" onClick={() => handleNavClick("promotions")}>Khuyến mãi</button>
           <button className="nav-btn" onClick={() => handleNavClick("price")}>Giá vé</button>
           <button className="nav-btn" onClick={() => handleNavClick("about")}>Giới thiệu</button>
+          <button className="nav-btn" onClick={() => handleNavClick("contact")}>Liên hệ</button>
         </nav>
 
         {/* User Account Box */}

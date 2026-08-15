@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import "./Footer.css";
 
 export default function Footer() {
@@ -6,13 +7,13 @@ export default function Footer() {
 
       <div className="footer-menu">
 
-        <a href="/">Chính sách</a>
-        <a href="/">Lịch chiếu</a>
-        <a href="/">Tin tức</a>
-        <a href="/">Giá vé</a>
-        <a href="/">Hỏi đáp</a>
-        <a href="/">Đặt vé nhóm</a>
-        <a href="/">Liên hệ</a>
+        <Link to="/">Chính sách</Link>
+        <Link to="/">Lịch chiếu</Link>
+        <Link to="/">Tin tức</Link>
+        <Link to="/">Giá vé</Link>
+        <Link to="/contact">Hỏi đáp</Link>
+        <Link to="/contact">Đặt vé nhóm</Link>
+        <Link to="/contact">Liên hệ</Link>
 
       </div>
 

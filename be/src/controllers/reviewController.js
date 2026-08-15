@@ -3,13 +3,13 @@ const Movie = require('../models/Movie');
 const Showtime = require('../models/Showtime');
 const Booking = require('../models/Booking');
 
-// @desc    Get reviews for a movie & check user eligible status
+// @desc    Get reviews for a movie (Only visible/non-hidden reviews) & check user eligible status
 // @route   GET /api/reviews/movie/:movieId
 exports.getMovieReviews = async (req, res) => {
     try {
         const { movieId } = req.params;
-        const reviews = await Review.find({ movie: movieId })
-            .populate('user', 'name avatar')
+        const reviews = await Review.find({ movie: movieId, isHidden: { $ne: true } })
+            .populate('user', 'name avatar email')
             .sort({ createdAt: -1 });
 
         const totalReviews = reviews.length;
@@ -100,6 +100,74 @@ exports.createReview = async (req, res) => {
         });
 
         res.status(201).json(review);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get all reviews for Admin management (includes hidden ones)
+// @route   GET /api/reviews
+// @access  Admin
+exports.getAllReviewsAdmin = async (req, res) => {
+    try {
+        const reviews = await Review.find()
+            .populate('movie', 'title poster genre rating')
+            .populate('user', 'name email avatar')
+            .sort({ createdAt: -1 });
+
+        res.json(reviews);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Toggle Hide/Unhide a review (Soft hide instead of delete)
+// @route   PUT /api/reviews/:id/toggle-hide
+// @access  Admin
+exports.toggleHideReviewAdmin = async (req, res) => {
+    try {
+        const review = await Review.findById(req.params.id);
+        if (!review) {
+            return res.status(404).json({ message: 'Không tìm thấy đánh giá!' });
+        }
+
+        review.isHidden = !review.isHidden;
+        await review.save();
+
+        res.json({
+            success: true,
+            message: review.isHidden ? 'Đã ẩn đánh giá thành công!' : 'Đã hiển thị lại đánh giá!',
+            data: review
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Admin reply to a review
+// @route   PUT /api/reviews/:id/reply
+// @access  Admin
+exports.replyReviewAdmin = async (req, res) => {
+    try {
+        const { reply } = req.body;
+        if (!reply || !reply.trim()) {
+            return res.status(400).json({ message: 'Nội dung phản hồi không được để trống!' });
+        }
+
+        const review = await Review.findByIdAndUpdate(
+            req.params.id,
+            { 
+                adminReply: reply.trim(),
+                adminReplyAt: new Date()
+            },
+            { new: true }
+        ).populate('movie', 'title poster').populate('user', 'name email');
+
+        if (!review) {
+            return res.status(404).json({ message: 'Không tìm thấy đánh giá!' });
+        }
+
+        res.json({ success: true, message: 'Đã phản hồi đánh giá thành công!', data: review });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

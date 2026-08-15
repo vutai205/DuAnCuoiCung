@@ -116,6 +116,13 @@ exports.createBooking = async (req, res) => {
             return res.status(401).json({ message: 'User not authenticated' });
         }
 
+        // Chặn tài khoản Admin thực hiện đặt vé mua hàng
+        if (req.user && req.user.role === 'admin') {
+            return res.status(403).json({ 
+                message: '🚫 Tài khoản Quản trị viên (Admin) không được phép thực hiện mua vé! Vui lòng sử dụng tài khoản Khách hàng.' 
+            });
+        }
+
         if (!seats || seats.length === 0) {
             return res.status(400).json({ message: 'No seats selected' });
         }

@@ -6,7 +6,10 @@ const reviewSchema = new mongoose.Schema({
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String, required: true },
     userName: { type: String },
-    userAvatar: { type: String }
+    userAvatar: { type: String },
+    adminReply: { type: String, default: null },
+    adminReplyAt: { type: Date, default: null },
+    isHidden: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Review', reviewSchema);

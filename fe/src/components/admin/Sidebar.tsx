@@ -8,7 +8,9 @@ import {
   FaChartBar,
   FaClock,
   FaUtensils,
-  FaTags
+  FaTags,
+  FaStar,
+  FaEnvelope
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -52,6 +54,16 @@ const Sidebar = () => {
       title: "Quản Lý Voucher",
       icon: <FaTags />,
       path: "/admin/vouchers"
+    },
+    {
+      title: "Quản Lý Đánh Giá",
+      icon: <FaStar />,
+      path: "/admin/reviews"
+    },
+    {
+      title: "Quản Lý Liên Hệ & Phản Hồi",
+      icon: <FaEnvelope />,
+      path: "/admin/contacts"
     },
     {
       title: "Quản Lý Tài Khoản & Khách Hàng",

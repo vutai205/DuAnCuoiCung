@@ -34,6 +34,13 @@ const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const user = getAuthUser();
 
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      antMessage.error('🚫 Tài khoản Quản trị viên (Admin) không được phép thực hiện đặt vé mua hàng!');
+      navigate('/');
+    }
+  }, [user]);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [showtimeData, setShowtimeData] = useState<ShowtimeData | null>(null);
   const [movieInfo, setMovieInfo] = useState<{ title: string; poster: string; duration: number } | null>(null);
@@ -360,6 +367,11 @@ const BookingPage: React.FC = () => {
     if (!user) {
       alert('Vui lòng đăng nhập để tiến hành đặt vé!');
       navigate('/login');
+      return;
+    }
+
+    if (user.role === 'admin') {
+      antMessage.error('🚫 Tài khoản Quản trị viên (Admin) không được phép thực hiện đặt vé mua hàng! Vui lòng dùng tài khoản Khách hàng.');
       return;
     }
 
