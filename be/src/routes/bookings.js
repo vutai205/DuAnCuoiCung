@@ -11,15 +11,15 @@ const {
     checkinBooking,
     cancelCheckinBooking
 } = require('../controllers/bookingController');
-const { protect, admin } = require('../middlewares/authMiddleware');
+const { protect, admin, protectAdminOrStaff } = require('../middlewares/authMiddleware');
 
-// Admin routes
-router.get('/stats', protect, admin, getDashboardStats);
-router.get('/', protect, admin, getBookings);
-router.put('/:id/status', protect, admin, updateBookingStatus);
-router.put('/:id/print', protect, admin, printBookingTicket);
-router.put('/:id/checkin', protect, admin, checkinBooking);
-router.put('/:id/cancel-checkin', protect, admin, cancelCheckinBooking);
+// Admin & Staff routes (Tác nghiệp đơn vé, soát vé QR, in vé quầy & tổng quan)
+router.get('/stats', protect, protectAdminOrStaff, getDashboardStats);
+router.get('/', protect, protectAdminOrStaff, getBookings);
+router.put('/:id/status', protect, protectAdminOrStaff, updateBookingStatus);
+router.put('/:id/print', protect, protectAdminOrStaff, printBookingTicket);
+router.put('/:id/checkin', protect, protectAdminOrStaff, checkinBooking);
+router.put('/:id/cancel-checkin', protect, protectAdminOrStaff, cancelCheckinBooking);
 
 // User routes
 router.post('/', protect, createBooking);

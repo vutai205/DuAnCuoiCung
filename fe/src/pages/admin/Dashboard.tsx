@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import Card from "../../components/admin/Card";
+import { getAuthUser } from "../../services/authApi";
 
 const Dashboard = () => {
+    const user = getAuthUser();
+    const isStaff = user?.role === 'staff';
+
     const [stats, setStats] = useState({
         totalMovies: 0,
         totalUsers: 0,
@@ -48,6 +53,45 @@ const Dashboard = () => {
 
     return (
         <>
+            <div style={{
+                marginBottom: '20px',
+                padding: '16px 20px',
+                backgroundColor: isStaff ? '#0284c7' : '#4f46e5',
+                color: '#fff',
+                borderRadius: '10px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+                <div>
+                    <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
+                        👋 Xin chào, {user?.name || "Người dùng"}!
+                    </h2>
+                    <p style={{ margin: '4px 0 0 0', opacity: 0.9, fontSize: '14px' }}>
+                        {isStaff 
+                            ? '🎫 Quyền hạn: Nhân viên Quầy / Soát vé — Chuyên trách Check-in QR và In vé cứng.' 
+                            : '👑 Quyền hạn: Quản trị viên (Admin) — Toàn quyền quản trị hệ thống rạp.'}
+                    </p>
+                </div>
+                {isStaff && (
+                    <Link 
+                        to="/admin/bookings" 
+                        style={{
+                            backgroundColor: '#fff',
+                            color: '#0284c7',
+                            padding: '10px 18px',
+                            borderRadius: '8px',
+                            fontWeight: 'bold',
+                            textDecoration: 'none',
+                            fontSize: '14px'
+                        }}
+                    >
+                        🎟️ Đi Đến Trang Soát Vé & In Vé
+                    </Link>
+                )}
+            </div>
+
             <div className="dashboard">
                 <Card
                     title="Tổng Số Phim"

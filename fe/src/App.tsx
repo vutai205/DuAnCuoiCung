@@ -4,7 +4,17 @@ import axios from 'axios';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import { getAuthUser } from './services/authApi';
 import './App.css';
+
+// Guard component to redirect staff users accessing admin-only routes
+function AdminOnlyRoute({ children }: { children: JSX.Element }) {
+  const user = getAuthUser();
+  if (user?.role === 'staff') {
+    return <Navigate to="/admin/bookings" replace />;
+  }
+  return children;
+}
 
 // Admin components
 import AdminLayout from "./layouts/AdminLayout";
@@ -280,18 +290,18 @@ function App() {
         {/* Admin routes */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
-          <Route path="movies" element={<MovieList />} />
-          <Route path="movies/add" element={<MovieAdd />} />
-          <Route path="movies/edit/:id" element={<MovieEdit />} />
-          <Route path="banner" element={<Banner />} />
-          <Route path="rooms" element={<Rooms />} />
-          <Route path="showtimes" element={<Showtimes />} />
-          <Route path="users" element={<UserManager />} />
-          <Route path="foods" element={<FoodList />} />
-          <Route path="vouchers" element={<VoucherManager />} />
-          <Route path="reviews" element={<ReviewManager />} />
-          <Route path="contacts" element={<ContactManager />} />
-          <Route path="customers" element={<CustomerList />} />
+          <Route path="movies" element={<AdminOnlyRoute><MovieList /></AdminOnlyRoute>} />
+          <Route path="movies/add" element={<AdminOnlyRoute><MovieAdd /></AdminOnlyRoute>} />
+          <Route path="movies/edit/:id" element={<AdminOnlyRoute><MovieEdit /></AdminOnlyRoute>} />
+          <Route path="banner" element={<AdminOnlyRoute><Banner /></AdminOnlyRoute>} />
+          <Route path="rooms" element={<AdminOnlyRoute><Rooms /></AdminOnlyRoute>} />
+          <Route path="showtimes" element={<AdminOnlyRoute><Showtimes /></AdminOnlyRoute>} />
+          <Route path="users" element={<AdminOnlyRoute><UserManager /></AdminOnlyRoute>} />
+          <Route path="foods" element={<AdminOnlyRoute><FoodList /></AdminOnlyRoute>} />
+          <Route path="vouchers" element={<AdminOnlyRoute><VoucherManager /></AdminOnlyRoute>} />
+          <Route path="reviews" element={<AdminOnlyRoute><ReviewManager /></AdminOnlyRoute>} />
+          <Route path="contacts" element={<AdminOnlyRoute><ContactManager /></AdminOnlyRoute>} />
+          <Route path="customers" element={<AdminOnlyRoute><CustomerList /></AdminOnlyRoute>} />
           <Route path="bookings" element={<BookingList />} />
         </Route>
 

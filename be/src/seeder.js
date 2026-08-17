@@ -33,6 +33,14 @@ const seedData = async () => {
             status: true
         });
 
+        const staff = new User({
+            name: 'Nhân viên Quầy Vé',
+            email: 'staff@gmail.com',
+            password: 'password123',
+            role: 'staff',
+            status: true
+        });
+
         const customer1 = new User({
             name: 'Nguyễn Văn A',
             email: 'nguyenvana@gmail.com',
@@ -50,9 +58,10 @@ const seedData = async () => {
         });
 
         await admin.save();
+        await staff.save();
         await customer1.save();
         await customer2.save();
-        console.log('Đã khởi tạo danh sách User!');
+        console.log('Đã khởi tạo danh sách User (Admin, Staff, Customer)!');
 
         // 2. Seed Banners
         const banner1 = new Banner({

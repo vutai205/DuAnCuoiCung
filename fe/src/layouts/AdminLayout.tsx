@@ -7,7 +7,7 @@ import "./admin.css";
 const AdminLayout = () => {
   const user = getAuthUser();
 
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "admin" && user.role !== "staff")) {
     return <Navigate to="/login" replace />;
   }
 

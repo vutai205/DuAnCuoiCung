@@ -2,7 +2,7 @@ export interface AuthUser {
   _id: string;
   name: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'staff';
   phone?: string;
   gender?: string;
   address?: string;

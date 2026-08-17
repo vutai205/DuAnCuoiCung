@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Table, 
   Card, 
@@ -22,7 +22,6 @@ import {
   PhoneOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
-  ExclamationCircleOutlined,
   ReloadOutlined,
   SendOutlined,
   DownOutlined

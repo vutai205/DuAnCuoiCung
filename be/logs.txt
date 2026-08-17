@@ -5382,3 +5382,15 @@
 [2026-08-15T13:31:09.998Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 136ms
 [2026-08-15T13:31:14.998Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 130ms
 [2026-08-15T13:31:20.002Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 353ms
+[2026-08-15T13:31:24.997Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 130ms
+[2026-08-15T13:31:29.997Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 132ms
+[2026-08-15T13:31:34.997Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 138ms
+[2026-08-15T13:31:39.998Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 128ms
+[2026-08-15T13:31:44.999Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 135ms
+[2026-08-15T13:31:49.998Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 143ms
+[2026-08-15T13:31:54.999Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 134ms
+[2026-08-15T13:31:59.999Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 153ms
+[2026-08-15T13:32:04.998Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 144ms
+[2026-08-15T13:32:09.996Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 129ms
+[2026-08-15T13:32:14.998Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 134ms
+[2026-08-15T13:32:19.997Z] GET /api/showtimes/6a80198bf4b983b057552cde/seats 304 - 127ms
