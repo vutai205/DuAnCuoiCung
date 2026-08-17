@@ -136,25 +136,13 @@ const UserTable = ({
                                             <td>
 
                                                 {
-
-                                                    user.role === "admin"
-
-                                                        ?
-
-                                                        <span className="badge bg-danger">
-
-                                                            Admin
-
-                                                        </span>
-
-                                                        :
-
-                                                        <span className="badge bg-success">
-
-                                                            User
-
-                                                        </span>
-
+                                                    user.role === "admin" ? (
+                                                        <span className="badge bg-danger">Admin</span>
+                                                    ) : user.role === "staff" ? (
+                                                        <span className="badge bg-info text-dark">Staff</span>
+                                                    ) : (
+                                                        <span className="badge bg-success">User</span>
+                                                    )
                                                 }
 
                                             </td>

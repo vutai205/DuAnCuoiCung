@@ -185,11 +185,15 @@ const UserModal = ({
                                 >
 
                                     <option value="user">
-                                        User
+                                        User (Khách hàng)
+                                    </option>
+
+                                    <option value="staff">
+                                        Staff (Nhân viên)
                                     </option>
 
                                     <option value="admin">
-                                        Admin
+                                        Admin (Quản trị)
                                     </option>
 
                                 </select>
