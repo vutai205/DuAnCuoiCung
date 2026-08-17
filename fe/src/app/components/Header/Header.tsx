@@ -109,7 +109,13 @@ export default function Header() {
                   <div className="user-dropdown-menu">
                     {user.role === "admin" && (
                       <Link to="/admin" onClick={() => setOpen(false)}>
-                        👑 Trang quản trị Admin
+                        👑 Trang Quản Trị Admin
+                      </Link>
+                    )}
+
+                    {user.role === "staff" && (
+                      <Link to="/admin" onClick={() => setOpen(false)} style={{ color: "#38bdf8", fontWeight: "bold" }}>
+                        🎫 Trang Quản Lý & Soát Vé
                       </Link>
                     )}
 
