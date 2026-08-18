@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    savedVouchers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Voucher'
+    }],
     resetPasswordOtp: String,
     resetPasswordOtpExpire: Date
 }, { timestamps: true });

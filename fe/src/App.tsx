@@ -43,6 +43,7 @@ import BannerSlider from "./app/components/BannerSlider/BannerSlider";
 import MovieDetailPage from "./pages/customer/MovieDetailPage";
 import BookingPage from "./pages/customer/BookingPage";
 import ContactPage from "./pages/customer/ContactPage";
+import PromotionsPage from "./pages/customer/PromotionsPage";
 import PaymentSuccessPage from "./pages/customer/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/customer/PaymentFailedPage";
 
@@ -281,6 +282,7 @@ function App() {
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failed" element={<PaymentFailedPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/promotions" element={<PromotionsPage />} />
 
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />

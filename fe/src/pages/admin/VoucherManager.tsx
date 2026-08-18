@@ -218,13 +218,42 @@ export default function VoucherManager() {
     },
   ];
 
+  const handleCreateMondayVoucher = async () => {
+    try {
+      const payload = {
+        code: "THU2VUIVE10K",
+        description: "Thứ 2 Vui Vẻ - Giảm 10.000đ trực tiếp cho đơn đặt vé xem phim",
+        discountType: "fixed",
+        discountValue: 10000,
+        minOrderValue: 0,
+        usageLimit: 100,
+        expiresAt: null
+      };
+
+      await axios.post("/api/vouchers", payload, getHeaders());
+      message.success("Đã phát hành 100 Voucher Thứ 2 Vui Vẻ (Giảm 10k) thành công!");
+      loadVouchers();
+    } catch (err: any) {
+      message.error(err.response?.data?.message || "Có lỗi xảy ra khi tạo Voucher Thứ 2!");
+    }
+  };
+
   return (
     <Card
       title="🎟️ Quản Lý Mã Giảm Giá / Voucher Khuyến Mãi"
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-          Tạo Voucher Mới
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            style={{ background: "#7c3aed", borderColor: "#7c3aed" }}
+            onClick={handleCreateMondayVoucher}
+          >
+            ⚡ Phát 100 Voucher Thứ 2 Vui Vẻ (-10k)
+          </Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+            Tạo Voucher Mới
+          </Button>
+        </Space>
       }
     >
       <Table

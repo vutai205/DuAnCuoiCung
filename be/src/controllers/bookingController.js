@@ -498,18 +498,137 @@ exports.getDashboardStats = async (req, res) => {
         const User = require('../models/User');
         const Movie = require('../models/Movie');
 
-        const bookings = await Booking.find({ status: 'confirmed' });
-        const totalRevenue = bookings.reduce((acc, booking) => acc + booking.totalPrice, 0);
+        const confirmedBookings = await Booking.find({ status: 'confirmed' })
+            .populate({
+                path: 'showtime',
+                populate: { path: 'movie', select: 'title poster' }
+            });
 
         const totalUsers = await User.countDocuments({});
         const totalMovies = await Movie.countDocuments({});
-        const totalBookings = await Booking.countDocuments({});
+        const totalBookingsCount = await Booking.countDocuments({});
+        const totalConfirmedBookings = confirmedBookings.length;
+
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        let totalRevenue = 0;
+        let todayRevenue = 0;
+        let todayBookings = 0;
+        let monthRevenue = 0;
+        let monthBookings = 0;
+
+        let vnpayRevenue = 0;
+        let vnpayCount = 0;
+        let cashRevenue = 0;
+        let cashCount = 0;
+
+        const movieMap = {};
+        const dailyMap = {};
+        const monthlyMap = {};
+
+        // Initialize last 7 days in dailyMap
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+            const key = d.toISOString().split('T')[0];
+            const dateLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+            dailyMap[key] = { key, dateLabel, revenue: 0, bookings: 0, seats: 0 };
+        }
+
+        // Initialize last 6 months in monthlyMap
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const monthLabel = `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
+            monthlyMap[key] = { key, monthLabel, revenue: 0, bookings: 0 };
+        }
+
+        confirmedBookings.forEach(b => {
+            const rev = b.totalPrice || 0;
+            const created = new Date(b.createdAt);
+            const seatCount = b.seats ? b.seats.length : 0;
+
+            totalRevenue += rev;
+
+            if (created >= startOfToday) {
+                todayRevenue += rev;
+                todayBookings += 1;
+            }
+
+            if (created >= startOfMonth) {
+                monthRevenue += rev;
+                monthBookings += 1;
+            }
+
+            if (b.paymentMethod === 'vnpay') {
+                vnpayRevenue += rev;
+                vnpayCount += 1;
+            } else {
+                cashRevenue += rev;
+                cashCount += 1;
+            }
+
+            // Daily chart grouping
+            const dayKey = created.toISOString().split('T')[0];
+            if (dailyMap[dayKey]) {
+                dailyMap[dayKey].revenue += rev;
+                dailyMap[dayKey].bookings += 1;
+                dailyMap[dayKey].seats += seatCount;
+            }
+
+            // Monthly chart grouping
+            const monthKey = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
+            if (monthlyMap[monthKey]) {
+                monthlyMap[monthKey].revenue += rev;
+                monthlyMap[monthKey].bookings += 1;
+            }
+
+            // Top movies grouping
+            if (b.showtime && b.showtime.movie) {
+                const m = b.showtime.movie;
+                const mId = m._id ? m._id.toString() : 'unknown';
+                if (!movieMap[mId]) {
+                    movieMap[mId] = {
+                        _id: mId,
+                        title: m.title || 'Phim chưa đặt tên',
+                        poster: m.poster || '',
+                        totalRevenue: 0,
+                        totalTickets: 0,
+                        totalBookings: 0
+                    };
+                }
+                movieMap[mId].totalRevenue += rev;
+                movieMap[mId].totalTickets += seatCount;
+                movieMap[mId].totalBookings += 1;
+            }
+        });
+
+        const topMovies = Object.values(movieMap)
+            .sort((a, b) => b.totalRevenue - a.totalRevenue)
+            .slice(0, 5);
+
+        const dailyRevenue = Object.values(dailyMap);
+        const monthlyRevenue = Object.values(monthlyMap);
 
         res.json({
             totalRevenue,
+            todayRevenue,
+            todayBookings,
+            monthRevenue,
+            monthBookings,
             totalUsers,
             totalMovies,
-            totalBookings
+            totalBookings: totalConfirmedBookings || totalBookingsCount,
+            dailyRevenue,
+            monthlyRevenue,
+            paymentStats: {
+                vnpayRevenue,
+                vnpayCount,
+                cashRevenue,
+                cashCount
+            },
+            topMovies
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

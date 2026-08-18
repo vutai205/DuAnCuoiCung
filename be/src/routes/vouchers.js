@@ -3,6 +3,8 @@ const router = express.Router();
 const {
     getVouchers,
     getPublicVouchers,
+    saveVoucher,
+    getMyVouchers,
     createVoucher,
     validateVoucher,
     toggleVoucherStatus,
@@ -13,6 +15,8 @@ const { protect, admin } = require('../middlewares/authMiddleware');
 // Public/Customer routes
 router.get('/public', getPublicVouchers);
 router.post('/validate', validateVoucher);
+router.post('/save', protect, saveVoucher);
+router.get('/my-vouchers', protect, getMyVouchers);
 
 // Admin routes
 router.get('/', protect, admin, getVouchers);

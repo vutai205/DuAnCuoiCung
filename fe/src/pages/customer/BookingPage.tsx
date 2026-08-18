@@ -88,6 +88,26 @@ const BookingPage: React.FC = () => {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [voucherMessage, setVoucherMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isValidatingVoucher, setIsValidatingVoucher] = useState<boolean>(false);
+  const [mySavedVouchers, setMySavedVouchers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchSavedVouchers = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await axios.get('/api/vouchers/my-vouchers', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (Array.isArray(res.data)) {
+            setMySavedVouchers(res.data);
+          }
+        } catch (e) {
+          console.error('Lỗi khi tải ví voucher:', e);
+        }
+      }
+    };
+    fetchSavedVouchers();
+  }, []);
 
   useEffect(() => {
     const fetchSeatLayout = async () => {
@@ -283,16 +303,18 @@ const BookingPage: React.FC = () => {
   const rawTotal = ticketsTotal + combosTotal;
   const grandTotal = Math.max(0, rawTotal - discountAmount);
 
-  const handleApplyVoucher = async () => {
-    if (!voucherInput.trim()) {
-      setVoucherMessage({ type: 'error', text: 'Vui lòng nhập mã Voucher!' });
+  const handleApplyVoucher = async (codeOverride?: string) => {
+    const code = codeOverride || voucherInput;
+    if (!code || !code.trim()) {
+      setVoucherMessage({ type: 'error', text: 'Vui lòng chọn hoặc nhập mã Voucher!' });
       return;
     }
+    setVoucherInput(code.trim().toUpperCase());
     setIsValidatingVoucher(true);
     setVoucherMessage(null);
     try {
       const res = await axios.post('/api/vouchers/validate', {
-        code: voucherInput.trim(),
+        code: code.trim(),
         orderTotal: rawTotal
       });
       if (res.data.valid) {
@@ -690,8 +712,13 @@ const BookingPage: React.FC = () => {
 
             {/* Voucher Section */}
             <div className="voucher-section-box" style={{ margin: '15px 0', padding: '12px', background: '#131b2e', borderRadius: '8px', border: '1px solid #1e293b' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#94a3b8', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>🎟️ MÃ GIẢM GIÁ / VOUCHER</span>
+                {mySavedVouchers.length > 0 && (
+                  <span style={{ fontSize: '0.78rem', color: '#fbbf24' }}>
+                    🎁 Có {mySavedVouchers.length} mã trong Ví
+                  </span>
+                )}
               </div>
               {appliedVoucher ? (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#064e3b', padding: '8px 12px', borderRadius: '6px', border: '1px solid #10b981' }}>
@@ -709,23 +736,54 @@ const BookingPage: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    placeholder="Nhập mã (VD: TNA20K)"
-                    value={voucherInput}
-                    onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '0.85rem', outline: 'none' }}
-                  />
-                  <button
-                    type="button"
-                    disabled={isValidatingVoucher || !voucherInput.trim()}
-                    onClick={handleApplyVoucher}
-                    style={{ padding: '8px 16px', background: '#e50914', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: isValidatingVoucher || !voucherInput.trim() ? 0.6 : 1 }}
-                  >
-                    {isValidatingVoucher ? '...' : 'Áp dụng'}
-                  </button>
-                </div>
+                <>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: mySavedVouchers.length > 0 ? '10px' : '0' }}>
+                    <input
+                      type="text"
+                      placeholder="Nhập mã (VD: THU2VUIVE10K)"
+                      value={voucherInput}
+                      onChange={(e) => setVoucherInput(e.target.value.toUpperCase())}
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid #334155', background: '#0f172a', color: '#fff', fontSize: '0.85rem', outline: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      disabled={isValidatingVoucher || !voucherInput.trim()}
+                      onClick={() => handleApplyVoucher()}
+                      style={{ padding: '8px 16px', background: '#e50914', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', opacity: isValidatingVoucher || !voucherInput.trim() ? 0.6 : 1 }}
+                    >
+                      {isValidatingVoucher ? '...' : 'Áp dụng'}
+                    </button>
+                  </div>
+
+                  {/* List of Saved Vouchers for quick one-click apply */}
+                  {mySavedVouchers.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                      {mySavedVouchers.map((sv: any) => (
+                        <button
+                          key={sv._id}
+                          type="button"
+                          onClick={() => handleApplyVoucher(sv.code)}
+                          style={{
+                            background: '#1e293b',
+                            border: '1px solid #334155',
+                            color: '#fbbf24',
+                            borderRadius: '6px',
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title={`Bấm để chọn mã ${sv.code}`}
+                        >
+                          📌 {sv.code} (-{sv.discountType === 'fixed' ? `${sv.discountValue.toLocaleString('vi-VN')}đ` : `${sv.discountValue}%`})
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
               {voucherMessage && (
                 <div style={{ fontSize: '0.8rem', marginTop: '6px', color: voucherMessage.type === 'success' ? '#10b981' : '#f87171' }}>

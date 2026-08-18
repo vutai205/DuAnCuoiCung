@@ -22,8 +22,77 @@ exports.getPublicVouchers = async (req, res) => {
                 { expiresAt: null },
                 { expiresAt: { $gt: now } }
             ]
-        }).select('code description discountType discountValue minOrderValue maxDiscount expiresAt');
+        }).select('code description discountType discountValue minOrderValue maxDiscount usageLimit usedCount expiresAt isActive');
         res.json(vouchers);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Save a voucher to user account
+// @route   POST /api/vouchers/save
+exports.saveVoucher = async (req, res) => {
+    try {
+        const { voucherId } = req.body;
+        const User = require('../models/User');
+
+        const voucher = await Voucher.findById(voucherId);
+        if (!voucher) {
+            return res.status(404).json({ message: 'Không tìm thấy Voucher này!' });
+        }
+
+        if (!voucher.isActive) {
+            return res.status(400).json({ message: 'Voucher này đã tạm dừng phát hành!' });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy thông tin tài khoản!' });
+        }
+
+        if (!user.savedVouchers) {
+            user.savedVouchers = [];
+        }
+
+        const isAlreadySaved = user.savedVouchers.some(
+            (id) => id.toString() === voucher._id.toString()
+        );
+
+        if (isAlreadySaved) {
+            return res.status(400).json({ message: 'Bạn đã lưu Voucher này vào ví ưu đãi rồi!' });
+        }
+
+        user.savedVouchers.push(voucher._id);
+        await user.save();
+
+        res.json({
+            message: `Lưu mã "${voucher.code}" thành công! Bạn có thể sử dụng khi thanh toán.`,
+            savedVouchers: user.savedVouchers
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get user's saved vouchers
+// @route   GET /api/vouchers/my-vouchers
+exports.getMyVouchers = async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const user = await User.findById(req.user._id).populate('savedVouchers');
+
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
+        }
+
+        const now = new Date();
+        const activeSavedVouchers = (user.savedVouchers || []).filter((v) => {
+            if (!v || !v.isActive) return false;
+            if (v.expiresAt && new Date(v.expiresAt) < now) return false;
+            return true;
+        });
+
+        res.json(activeSavedVouchers);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -25,6 +25,8 @@ export default function Header() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (target === "contact") {
       navigate("/contact");
+    } else if (target === "promotions") {
+      navigate("/promotions");
     } else if (target === "showtimes") {
       if (location.pathname !== "/") {
         navigate("/");
