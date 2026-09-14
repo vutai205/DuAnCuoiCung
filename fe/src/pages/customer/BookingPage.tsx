@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -78,7 +78,7 @@ const BookingPage: React.FC = () => {
   }, []);
 
   // Payment state
-  const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cash'>('vnpay');
+  const [paymentMethod, setPaymentMethod] = useState<'vnpay' | 'cash' | 'momo'>('vnpay');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdBooking, setCreatedBooking] = useState<any | null>(null);
 
@@ -298,10 +298,88 @@ const BookingPage: React.FC = () => {
     return base;
   };
 
+  const getSeatTypeName = (type: string) => {
+    if (type === 'vip') return 'Ghế VIP';
+    if (type === 'couple') return 'Ghế Đôi';
+    return 'Ghế Thường';
+  };
+
+  const getSeatTypeOrder = (type: string) => {
+    if (type === 'regular' || !type) return 1;
+    if (type === 'vip') return 2;
+    if (type === 'couple') return 3;
+    return 4;
+  };
+
+  const groupedSelectedSeats = useMemo(() => {
+    if (!showtimeData || selectedSeats.length === 0) return [];
+
+    const groupsMap: {
+      [type: string]: {
+        type: string;
+        name: string;
+        seats: string[];
+        totalPrice: number;
+      }
+    } = {};
+
+    selectedSeats.forEach(seatName => {
+      const seatObj = showtimeData.seats.find(s => s.seatName === seatName);
+      const type = seatObj?.type || 'regular';
+      const price = calculateSeatPrice(seatName);
+      const name = getSeatTypeName(type);
+
+      if (!groupsMap[type]) {
+        groupsMap[type] = {
+          type,
+          name,
+          seats: [],
+          totalPrice: 0
+        };
+      }
+      groupsMap[type].seats.push(seatName);
+      groupsMap[type].totalPrice += price;
+    });
+
+    return Object.values(groupsMap).sort((a, b) => getSeatTypeOrder(a.type) - getSeatTypeOrder(b.type));
+  }, [selectedSeats, showtimeData]);
+
   const ticketsTotal = selectedSeats.reduce((sum, seat) => sum + calculateSeatPrice(seat), 0);
   const combosTotal = combos.reduce((sum, c) => sum + c.price * c.count, 0);
   const rawTotal = ticketsTotal + combosTotal;
   const grandTotal = Math.max(0, rawTotal - discountAmount);
+
+  // Tự động tính lại tiền giảm giá khi số lượng ghế hoặc combo thay đổi nếu đã áp dụng mã
+  useEffect(() => {
+    if (!appliedVoucher) return;
+
+    const minOrder = appliedVoucher.minOrderValue || 0;
+    if (rawTotal < minOrder) {
+      setDiscountAmount(0);
+      setVoucherMessage({
+        type: 'error',
+        text: `Mã "${appliedVoucher.code}" yêu cầu đơn hàng tối thiểu ${minOrder.toLocaleString('vi-VN')} đ`
+      });
+      return;
+    }
+
+    let calculated = 0;
+    if (appliedVoucher.discountType === 'fixed') {
+      calculated = appliedVoucher.discountValue;
+    } else if (appliedVoucher.discountType === 'percent') {
+      calculated = (rawTotal * appliedVoucher.discountValue) / 100;
+      if (appliedVoucher.maxDiscount && calculated > appliedVoucher.maxDiscount) {
+        calculated = appliedVoucher.maxDiscount;
+      }
+    }
+
+    const finalDiscount = Math.min(calculated, rawTotal);
+    setDiscountAmount(finalDiscount);
+    setVoucherMessage({
+      type: 'success',
+      text: `Áp dụng thành công! Giảm ${finalDiscount.toLocaleString('vi-VN')} đ`
+    });
+  }, [rawTotal, appliedVoucher]);
 
   const handleApplyVoucher = async (codeOverride?: string) => {
     const code = codeOverride || voucherInput;
@@ -435,6 +513,18 @@ const BookingPage: React.FC = () => {
 
       if (paymentMethod === 'vnpay') {
         const payRes = await axios.post('/api/payment/create_payment_url', {
+          bookingId: booking._id,
+          amount: grandTotal
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (payRes.data && payRes.data.paymentUrl) {
+          window.location.href = payRes.data.paymentUrl;
+          return;
+        }
+      } else if (paymentMethod === 'momo') {
+        const payRes = await axios.post('/api/payment/create_momo_url', {
           bookingId: booking._id,
           amount: grandTotal
         }, {
@@ -679,16 +769,18 @@ const BookingPage: React.FC = () => {
                 </thead>
                 <tbody>
                   {selectedSeats.length > 0 ? (
-                    <tr>
-                      <td>
-                        <div className="item-name">Ghế rạp</div>
-                        <div className="item-subtext">{formatSeatDisplay(selectedSeats)}</div>
-                      </td>
-                      <td className="text-center">{selectedSeats.length}</td>
-                      <td className="text-right highlight-price">
-                        {ticketsTotal.toLocaleString('vi-VN')}đ
-                      </td>
-                    </tr>
+                    groupedSelectedSeats.map(group => (
+                      <tr key={group.type}>
+                        <td>
+                          <div className="item-name">{group.name}</div>
+                          <div className="item-subtext">{formatSeatDisplay(group.seats)}</div>
+                        </td>
+                        <td className="text-center">{group.seats.length}</td>
+                        <td className="text-right highlight-price">
+                          {group.totalPrice.toLocaleString('vi-VN')}đ
+                        </td>
+                      </tr>
+                    ))
                   ) : (
                     <tr>
                       <td colSpan={3} className="empty-row-text">Chưa chọn ghế ngồi</td>
@@ -821,6 +913,20 @@ const BookingPage: React.FC = () => {
                 <span>💳 VNPAY Gateway (Thẻ/QR Code)</span>
               </label>
 
+              <label className={`payment-option ${paymentMethod === 'momo' ? 'active' : ''}`} style={{ borderColor: paymentMethod === 'momo' ? '#d82d8b' : undefined, background: paymentMethod === 'momo' ? 'rgba(216, 45, 139, 0.12)' : undefined }}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value="momo"
+                  checked={paymentMethod === 'momo'}
+                  onChange={() => setPaymentMethod('momo')}
+                />
+                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ background: '#a50064', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 800 }}>MoMo</span>
+                  Ví Điện Tử MoMo (Sandbox)
+                </span>
+              </label>
+
               <label className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}>
                 <input
                   type="radio"
@@ -887,7 +993,7 @@ const BookingPage: React.FC = () => {
             </div>
 
             <div className="ticket-modal-footer">
-              <button className="btn-secondary" onClick={() => navigate('/profile')}>
+              <button className="btn-secondary" onClick={() => navigate('/profile?tab=ticket')}>
                 Xem vé trong Hồ sơ
               </button>
               <button className="btn-primary" onClick={() => navigate('/')}>

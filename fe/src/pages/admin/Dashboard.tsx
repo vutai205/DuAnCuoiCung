@@ -46,6 +46,8 @@ const Dashboard = () => {
         paymentStats: {
             vnpayRevenue: 0,
             vnpayCount: 0,
+            momoRevenue: 0,
+            momoCount: 0,
             cashRevenue: 0,
             cashCount: 0
         },
@@ -98,9 +100,10 @@ const Dashboard = () => {
     const chartList = chartMode === 'daily' ? stats.dailyRevenue : stats.monthlyRevenue;
     const maxRev = Math.max(...(chartList.map(item => item.revenue) || [1]), 100000);
 
-    const totalPaymentRev = (stats.paymentStats?.vnpayRevenue || 0) + (stats.paymentStats?.cashRevenue || 0) || 1;
+    const totalPaymentRev = (stats.paymentStats?.vnpayRevenue || 0) + (stats.paymentStats?.momoRevenue || 0) + (stats.paymentStats?.cashRevenue || 0) || 1;
     const vnpayPercent = Math.round(((stats.paymentStats?.vnpayRevenue || 0) / totalPaymentRev) * 100);
-    const cashPercent = 100 - vnpayPercent;
+    const momoPercent = Math.round(((stats.paymentStats?.momoRevenue || 0) / totalPaymentRev) * 100);
+    const cashPercent = Math.max(0, 100 - vnpayPercent - momoPercent);
 
     return (
         <div style={{ paddingBottom: 40 }}>
@@ -433,7 +436,7 @@ const Dashboard = () => {
                             <span>💳</span> Thống Kê Phương Thức Thanh Toán
                         </h3>
 
-                        <div style={{ marginBottom: 20 }}>
+                        <div style={{ marginBottom: 16 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: 6 }}>
                                 <span>🌐 VNPay Online ({vnpayPercent}%)</span>
                                 <strong>{formatVND(stats.paymentStats?.vnpayRevenue || 0)}</strong>
@@ -443,6 +446,19 @@ const Dashboard = () => {
                             </div>
                             <span style={{ fontSize: '11px', color: '#64748b', marginTop: 4, display: 'block' }}>
                                 Total: {stats.paymentStats?.vnpayCount || 0} giao dịch thành công
+                            </span>
+                        </div>
+
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: 6 }}>
+                                <span>📱 Ví MoMo ({momoPercent}%)</span>
+                                <strong>{formatVND(stats.paymentStats?.momoRevenue || 0)}</strong>
+                            </div>
+                            <div style={{ height: 10, background: '#e2e8f0', borderRadius: 5, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${momoPercent}%`, background: '#d82d8b', borderRadius: 5 }}></div>
+                            </div>
+                            <span style={{ fontSize: '11px', color: '#64748b', marginTop: 4, display: 'block' }}>
+                                Total: {stats.paymentStats?.momoCount || 0} giao dịch MoMo
                             </span>
                         </div>
 
@@ -469,7 +485,7 @@ const Dashboard = () => {
                         fontSize: '12px',
                         color: '#1e40af'
                     }}>
-                        💡 <strong>Mẹo vận hành:</strong> Thanh toán qua VNPay-QR giúp giảm thời gian chờ tại quầy vé lên tới 80%!
+                        💡 <strong>Mẹo vận hành:</strong> Thanh toán qua VNPay-QR & Ví MoMo giúp giảm thời gian chờ tại quầy vé lên tới 80%!
                     </div>
                 </div>
             </div>
@@ -531,10 +547,10 @@ const Dashboard = () => {
                                                 fontWeight: 700,
                                                 padding: '4px 8px',
                                                 borderRadius: '6px',
-                                                background: b.paymentMethod === 'vnpay' ? '#dbeafe' : '#fef3c7',
-                                                color: b.paymentMethod === 'vnpay' ? '#1d4ed8' : '#b45309'
+                                                background: b.paymentMethod === 'vnpay' ? '#dbeafe' : b.paymentMethod === 'momo' ? '#fce7f3' : '#fef3c7',
+                                                color: b.paymentMethod === 'vnpay' ? '#1d4ed8' : b.paymentMethod === 'momo' ? '#9d174d' : '#b45309'
                                             }}>
-                                                {b.paymentMethod === 'vnpay' ? 'VNPay Online' : 'Tiền mặt tại quầy'}
+                                                {b.paymentMethod === 'vnpay' ? 'VNPay Online' : b.paymentMethod === 'momo' ? 'Ví MoMo' : 'Tiền mặt tại quầy'}
                                             </span>
                                         </td>
                                         <td style={{ padding: '14px 16px' }}>

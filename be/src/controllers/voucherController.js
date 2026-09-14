@@ -195,7 +195,9 @@ exports.validateVoucher = async (req, res) => {
                 code: voucher.code,
                 description: voucher.description,
                 discountType: voucher.discountType,
-                discountValue: voucher.discountValue
+                discountValue: voucher.discountValue,
+                minOrderValue: voucher.minOrderValue || 0,
+                maxDiscount: voucher.maxDiscount || null
             },
             discountAmount
         });

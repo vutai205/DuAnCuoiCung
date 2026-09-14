@@ -46,6 +46,7 @@ import ContactPage from "./pages/customer/ContactPage";
 import PromotionsPage from "./pages/customer/PromotionsPage";
 import PaymentSuccessPage from "./pages/customer/PaymentSuccessPage";
 import PaymentFailedPage from "./pages/customer/PaymentFailedPage";
+import MomoGatewayPage from "./pages/customer/MomoGatewayPage";
 
 // Helper component to scroll to top automatically on route change
 function ScrollToTop() {
@@ -265,7 +266,7 @@ function App() {
   const location = useLocation();
   
   // Do not show user-facing Header/Footer on admin pages and auth pages
-  const showHeaderFooter = !location.pathname.startsWith('/admin') && !['/login', '/register', '/forgot-password'].includes(location.pathname);
+  const showHeaderFooter = !location.pathname.startsWith('/admin') && !['/login', '/register', '/forgot-password', '/momo-payment'].includes(location.pathname);
 
   return (
     <>
@@ -281,6 +282,7 @@ function App() {
         <Route path="/member-card" element={<MemberCard />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="/payment-failed" element={<PaymentFailedPage />} />
+        <Route path="/momo-payment" element={<MomoGatewayPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/promotions" element={<PromotionsPage />} />
 

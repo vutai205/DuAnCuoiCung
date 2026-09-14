@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const moment = require('moment');
 const Booking = require('../models/Booking');
 const Showtime = require('../models/Showtime');
 const Food = require('../models/Food');
@@ -509,9 +510,8 @@ exports.getDashboardStats = async (req, res) => {
         const totalBookingsCount = await Booking.countDocuments({});
         const totalConfirmedBookings = confirmedBookings.length;
 
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfToday = moment().startOf('day').toDate();
+        const startOfMonth = moment().startOf('month').toDate();
 
         let totalRevenue = 0;
         let todayRevenue = 0;
@@ -521,6 +521,8 @@ exports.getDashboardStats = async (req, res) => {
 
         let vnpayRevenue = 0;
         let vnpayCount = 0;
+        let momoRevenue = 0;
+        let momoCount = 0;
         let cashRevenue = 0;
         let cashCount = 0;
 
@@ -528,19 +530,19 @@ exports.getDashboardStats = async (req, res) => {
         const dailyMap = {};
         const monthlyMap = {};
 
-        // Initialize last 7 days in dailyMap
+        // Initialize last 7 days in dailyMap using moment (prevents timezone offset bug)
         for (let i = 6; i >= 0; i--) {
-            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-            const key = d.toISOString().split('T')[0];
-            const dateLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+            const d = moment().subtract(i, 'days');
+            const key = d.format('YYYY-MM-DD');
+            const dateLabel = `${d.date()}/${d.month() + 1}`;
             dailyMap[key] = { key, dateLabel, revenue: 0, bookings: 0, seats: 0 };
         }
 
         // Initialize last 6 months in monthlyMap
         for (let i = 5; i >= 0; i--) {
-            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            const monthLabel = `Tháng ${d.getMonth() + 1}/${d.getFullYear()}`;
+            const d = moment().subtract(i, 'months');
+            const key = d.format('YYYY-MM');
+            const monthLabel = `Tháng ${d.month() + 1}/${d.year()}`;
             monthlyMap[key] = { key, monthLabel, revenue: 0, bookings: 0 };
         }
 
@@ -564,13 +566,16 @@ exports.getDashboardStats = async (req, res) => {
             if (b.paymentMethod === 'vnpay') {
                 vnpayRevenue += rev;
                 vnpayCount += 1;
+            } else if (b.paymentMethod === 'momo') {
+                momoRevenue += rev;
+                momoCount += 1;
             } else {
                 cashRevenue += rev;
                 cashCount += 1;
             }
 
-            // Daily chart grouping
-            const dayKey = created.toISOString().split('T')[0];
+            // Daily chart grouping (in local timezone using moment)
+            const dayKey = moment(b.createdAt).format('YYYY-MM-DD');
             if (dailyMap[dayKey]) {
                 dailyMap[dayKey].revenue += rev;
                 dailyMap[dayKey].bookings += 1;
@@ -578,7 +583,7 @@ exports.getDashboardStats = async (req, res) => {
             }
 
             // Monthly chart grouping
-            const monthKey = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
+            const monthKey = moment(b.createdAt).format('YYYY-MM');
             if (monthlyMap[monthKey]) {
                 monthlyMap[monthKey].revenue += rev;
                 monthlyMap[monthKey].bookings += 1;
@@ -625,6 +630,8 @@ exports.getDashboardStats = async (req, res) => {
             paymentStats: {
                 vnpayRevenue,
                 vnpayCount,
+                momoRevenue,
+                momoCount,
                 cashRevenue,
                 cashCount
             },

@@ -32,7 +32,7 @@ const PaymentSuccessPage: React.FC = () => {
         </div>
 
         <div className="actions-group">
-          <button className="btn-secondary" onClick={() => navigate('/profile')}>
+          <button className="btn-secondary" onClick={() => navigate('/profile?tab=ticket')}>
             Xem Lịch Sử Mua Vé
           </button>
           <button className="btn-primary" onClick={() => navigate('/')}>

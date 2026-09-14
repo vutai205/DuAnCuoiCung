@@ -18,7 +18,7 @@ const bookingSchema = new mongoose.Schema({
     ticketCode: { type: String },
     paymentMethod: {
         type: String,
-        enum: ['vnpay', 'cash'],
+        enum: ['vnpay', 'cash', 'momo'],
         default: 'vnpay'
     },
     expiresAt: { type: Date, default: null }, // Null for cash/direct payment at counter

@@ -197,9 +197,6 @@ const MovieDetailPage: React.FC = () => {
                           >
                             <span className="st-time">{dayjs(st.startTime).format('HH:mm')}</span>
                             <span className="st-room">{st.room?.name || 'Phòng chiếu'}</span>
-                            <span className="st-price">
-                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(st.ticketPrice)}
-                            </span>
                           </div>
                         ))}
                     </div>

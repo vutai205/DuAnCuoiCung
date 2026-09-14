@@ -195,8 +195,9 @@ const Showtimes: React.FC = () => {
         const stRoomId = st.room && typeof st.room === 'object' ? st.room._id : st.room;
         if (stRoomId !== values.room) return false;
 
+        const stDuration = st.movie && typeof st.movie === 'object' && st.movie.duration ? st.movie.duration : 120;
         const existingStart = new Date(st.startTime).getTime();
-        const existingEnd = new Date(st.endTime).getTime();
+        const existingEnd = st.endTime ? new Date(st.endTime).getTime() : existingStart + stDuration * 60 * 1000;
         const newStartMs = startTime.getTime();
         const newEndMs = endTime.getTime();
 
@@ -311,8 +312,9 @@ const Showtimes: React.FC = () => {
           const stRoomId = st.room && typeof st.room === 'object' ? st.room._id : st.room;
           if (stRoomId !== roomId) return false;
 
+          const stDuration = st.movie && typeof st.movie === 'object' && st.movie.duration ? st.movie.duration : 120;
           const existingStart = new Date(st.startTime).getTime();
-          const existingEnd = new Date(st.endTime).getTime();
+          const existingEnd = st.endTime ? new Date(st.endTime).getTime() : existingStart + stDuration * 60 * 1000;
           const newStart = currentStart.toDate().getTime();
           const newEnd = currentEnd.toDate().getTime();
 

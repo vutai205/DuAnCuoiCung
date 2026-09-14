@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { Modal, Form, Input, message } from "antd";
 import "./Profile.css";
@@ -8,7 +9,16 @@ import PointHistory from "./PointHistory";
 import { getAuthUser, getToken, saveAuthUser } from "../../../services/authApi";
 
 export default function Profile() {
-  const [activeTab, setActiveTab] = useState("profile");
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<string>(tabParam || "profile");
+
+  useEffect(() => {
+    if (tabParam && ["profile", "member", "ticket", "point"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   const [user, setUser] = useState<any>(null);
   const [name, setName] = useState<string>("");
   const [phone, setPhone] = useState<string>("");

@@ -8,20 +8,40 @@ const moment = require('moment');
  * Checks if a proposed showtime overlaps with existing showtimes in the specified room
  */
 const checkShowtimeOverlap = async (roomId, startTime, endTime, excludeShowtimeId = null) => {
-    const newStart = new Date(startTime);
-    const newEnd = new Date(endTime);
+    const newStart = new Date(startTime).getTime();
+    const newEnd = new Date(endTime).getTime();
 
-    const query = {
-        room: roomId,
-        startTime: { $lt: newEnd },
-        endTime: { $gt: newStart }
-    };
-
+    const query = { room: roomId };
     if (excludeShowtimeId) {
         query._id = { $ne: excludeShowtimeId };
     }
 
-    return await Showtime.findOne(query).populate('movie room');
+    const existingShowtimes = await Showtime.find(query).populate('movie room');
+
+    for (const st of existingShowtimes) {
+        if (!st || !st.startTime) continue;
+
+        const stStart = new Date(st.startTime).getTime();
+        let stEnd;
+        if (st.endTime) {
+            stEnd = new Date(st.endTime).getTime();
+        } else if (st.movie && st.movie.duration) {
+            stEnd = stStart + st.movie.duration * 60 * 1000;
+        } else {
+            stEnd = stStart + 120 * 60 * 1000;
+        }
+
+        // Overlap condition: newStart < stEnd AND newEnd > stStart
+        if (newStart < stEnd && newEnd > stStart) {
+            if (!st.endTime) {
+                st.endTime = new Date(stEnd);
+                await st.save().catch(() => {});
+            }
+            return st;
+        }
+    }
+
+    return null;
 };
 
 // @desc    Get showtimes for a movie (Grouped by Date)
@@ -162,10 +182,15 @@ exports.getShowtimes = async (req, res) => {
             }
         }
 
-        const showtimesWithBookings = showtimes.map(st => ({
-            ...st,
-            bookedSeatsCount: (st && st._id && bookingMap[st._id.toString()]) ? bookingMap[st._id.toString()] : 0
-        }));
+        const showtimesWithBookings = showtimes.map(st => {
+            const duration = st.movie && st.movie.duration ? st.movie.duration : 120;
+            const calculatedEnd = st.endTime ? st.endTime : new Date(new Date(st.startTime).getTime() + duration * 60 * 1000).toISOString();
+            return {
+                ...st,
+                endTime: calculatedEnd,
+                bookedSeatsCount: (st && st._id && bookingMap[st._id.toString()]) ? bookingMap[st._id.toString()] : 0
+            };
+        });
 
         res.json(showtimesWithBookings);
     } catch (error) {
@@ -212,19 +237,7 @@ const checkRoomMovieCompatibility = (room, movie) => {
 exports.createShowtime = async (req, res) => {
     try {
         const { movie: movieId, room: roomId, startTime, endTime, ticketPrice, vipSurcharge = 15000, coupleSurcharge = 20000, status = 'upcoming' } = req.body;
-        
-        const newStart = new Date(startTime);
-        const newEnd = new Date(endTime);
 
-        if (newStart < new Date()) {
-            return res.status(400).json({ message: 'Không thể tạo suất chiếu ở thời gian trong quá khứ!' });
-        }
-
-        if (newEnd <= newStart) {
-            return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu!' });
-        }
-
-        // 🛑 Kiểm tra tương thích Loại Phòng & Định Dạng Phim
         const roomDoc = await Room.findById(roomId);
         const movieDoc = await Movie.findById(movieId);
 
@@ -235,6 +248,19 @@ exports.createShowtime = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy thông tin phim!' });
         }
 
+        const newStart = new Date(startTime);
+        const duration = movieDoc.duration || 120;
+        const newEnd = endTime ? new Date(endTime) : new Date(newStart.getTime() + duration * 60 * 1000);
+
+        if (newStart < new Date()) {
+            return res.status(400).json({ message: 'Không thể tạo suất chiếu ở thời gian trong quá khứ!' });
+        }
+
+        if (newEnd <= newStart) {
+            return res.status(400).json({ message: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu!' });
+        }
+
+        // 🛑 Kiểm tra tương thích Loại Phòng & Định Dạng Phim
         const compatError = checkRoomMovieCompatibility(roomDoc, movieDoc);
         if (compatError) {
             return res.status(400).json({ message: compatError });
@@ -246,7 +272,7 @@ exports.createShowtime = async (req, res) => {
             const conflictMovieTitle = conflict.movie?.title || 'Phim khác';
             const conflictRoomName = conflict.room?.name || 'Phòng chiếu';
             const conflictStart = moment(conflict.startTime).format('HH:mm DD/MM/YYYY');
-            const conflictEnd = moment(conflict.endTime).format('HH:mm DD/MM/YYYY');
+            const conflictEnd = moment(conflict.endTime || new Date(new Date(conflict.startTime).getTime() + (conflict.movie?.duration || 120) * 60 * 1000)).format('HH:mm DD/MM/YYYY');
             return res.status(400).json({
                 message: `Trùng lịch chiếu! Phòng "${conflictRoomName}" đã có suất chiếu phim "${conflictMovieTitle}" từ ${conflictStart} đến ${conflictEnd}.`
             });
@@ -255,8 +281,8 @@ exports.createShowtime = async (req, res) => {
         const showtime = new Showtime({
             movie: movieId,
             room: roomId,
-            startTime,
-            endTime,
+            startTime: newStart,
+            endTime: newEnd,
             ticketPrice,
             vipSurcharge,
             coupleSurcharge,
@@ -353,8 +379,31 @@ exports.updateShowtime = async (req, res) => {
         }
 
         const targetRoom = req.body.room || showtime.room;
-        const targetStart = req.body.startTime || showtime.startTime;
-        const targetEnd = req.body.endTime || showtime.endTime;
+        const targetStart = req.body.startTime ? new Date(req.body.startTime) : new Date(showtime.startTime);
+
+        if (targetStart < now) {
+            return res.status(400).json({ message: 'Không thể chỉnh sửa thời gian bắt đầu về thời điểm trong quá khứ!' });
+        }
+
+        const roomDoc = await Room.findById(targetRoom);
+        const targetMovieId = req.body.movie || showtime.movie;
+        const movieDoc = await Movie.findById(targetMovieId);
+        if (roomDoc && movieDoc) {
+            const compatError = checkRoomMovieCompatibility(roomDoc, movieDoc);
+            if (compatError) {
+                return res.status(400).json({ message: compatError });
+            }
+        }
+
+        let targetEnd;
+        if (req.body.endTime) {
+            targetEnd = new Date(req.body.endTime);
+        } else if (movieDoc) {
+            const duration = movieDoc.duration || 120;
+            targetEnd = new Date(targetStart.getTime() + duration * 60 * 1000);
+        } else {
+            targetEnd = showtime.endTime ? new Date(showtime.endTime) : new Date(targetStart.getTime() + 120 * 60 * 1000);
+        }
 
         // 🛑 Kiểm tra trùng lịch suất chiếu cùng phòng khi cập nhật
         const conflict = await checkShowtimeOverlap(targetRoom, targetStart, targetEnd, showtime._id);
@@ -362,12 +411,13 @@ exports.updateShowtime = async (req, res) => {
             const conflictMovieTitle = conflict.movie?.title || 'Phim khác';
             const conflictRoomName = conflict.room?.name || 'Phòng chiếu';
             const conflictStart = moment(conflict.startTime).format('HH:mm DD/MM/YYYY');
-            const conflictEnd = moment(conflict.endTime).format('HH:mm DD/MM/YYYY');
+            const conflictEnd = moment(conflict.endTime || new Date(new Date(conflict.startTime).getTime() + (conflict.movie?.duration || 120) * 60 * 1000)).format('HH:mm DD/MM/YYYY');
             return res.status(400).json({
                 message: `Trùng lịch chiếu! Phòng "${conflictRoomName}" đã có suất chiếu phim "${conflictMovieTitle}" từ ${conflictStart} đến ${conflictEnd}.`
             });
         }
 
+        req.body.endTime = targetEnd;
         Object.assign(showtime, req.body);
         const updatedShowtime = await showtime.save();
         res.json(updatedShowtime);
