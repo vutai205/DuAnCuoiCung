@@ -4,6 +4,11 @@ import axios from 'axios';
 import AuthLayout from '../../components/auth/AuthLayout';
 import { login, saveAuthUser } from '../../services/authApi';
 
+interface FieldErrors {
+  email?: string;
+  password?: string;
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -11,21 +16,47 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  const validate = (): boolean => {
+    const errors: FieldErrors = {};
+    const emailTrimmed = email.trim();
+
+    if (!emailTrimmed) {
+      errors.email = 'Vui lòng nhập địa chỉ Email của bạn!';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      errors.email = 'Email không hợp lệ (VD: ban@email.com)!';
+    }
+
+    if (!password) {
+      errors.password = 'Vui lòng nhập mật khẩu!';
+    } else if (password.length < 6) {
+      errors.password = 'Mật khẩu phải chứa ít nhất 6 ký tự!';
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validate()) {
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const user = await login({ email, password });
+      const user = await login({ email: email.trim(), password });
       saveAuthUser(user);
       navigate('/');
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+        setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
       } else {
-        setError('Đã xảy ra lỗi. Vui lòng thử lại.');
+        setError('Đã xảy ra lỗi hệ thống. Vui lòng thử lại.');
       }
     } finally {
       setLoading(false);
@@ -37,11 +68,11 @@ export default function LoginPage() {
       title="Đăng nhập"
       subtitle="Chào mừng trở lại! Đăng nhập để đặt vé xem phim yêu thích."
     >
-      <form className="auth-form" onSubmit={handleSubmit}>
-        {error && <div className="auth-alert auth-alert--error">{error}</div>}
+      <form className="auth-form" onSubmit={handleSubmit} noValidate>
+        {error && <div className="auth-alert auth-alert--error">⚠️ {error}</div>}
 
         <div className="auth-field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">EMAIL</label>
           <div className="auth-input-wrap">
             <span className="auth-input-icon">✉️</span>
             <input
@@ -49,15 +80,19 @@ export default function LoginPage() {
               type="email"
               placeholder="ban@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              className={fieldErrors.email ? 'has-error' : ''}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
+              }}
               autoComplete="email"
             />
           </div>
+          {fieldErrors.email && <div className="auth-field-error">⚠️ {fieldErrors.email}</div>}
         </div>
 
         <div className="auth-field">
-          <label htmlFor="password">Mật khẩu</label>
+          <label htmlFor="password">MẬT KHẨU</label>
           <div className="auth-input-wrap">
             <span className="auth-input-icon">🔒</span>
             <input
@@ -65,8 +100,11 @@ export default function LoginPage() {
               type={showPassword ? 'text' : 'password'}
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              className={fieldErrors.password ? 'has-error' : ''}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: undefined }));
+              }}
               autoComplete="current-password"
             />
             <button
@@ -78,6 +116,7 @@ export default function LoginPage() {
               {showPassword ? '🙈' : '👁️'}
             </button>
           </div>
+          {fieldErrors.password && <div className="auth-field-error">⚠️ {fieldErrors.password}</div>}
         </div>
 
         <div className="auth-form__actions">
@@ -87,7 +126,7 @@ export default function LoginPage() {
         </div>
 
         <button type="submit" className="auth-btn auth-btn--primary" disabled={loading}>
-          {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          {loading ? '⏳ Đang đăng nhập...' : 'Đăng nhập'}
         </button>
 
         <p className="auth-switch">

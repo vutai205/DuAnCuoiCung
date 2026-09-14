@@ -6,52 +6,97 @@ import {
   FaDoorOpen,
   FaImages,
   FaChartBar,
-  FaClock
+  FaClock,
+  FaUtensils,
+  FaTags,
+  FaStar,
+  FaEnvelope
 } from "react-icons/fa";
+import { getAuthUser } from "../../services/authApi";
 
 const Sidebar = () => {
-  const menus = [
+  const user = getAuthUser();
+  const isStaff = user?.role === 'staff';
+
+  const allMenus = [
     {
-      title: "Dashboard",
+      title: "Tổng Quan",
       icon: <FaChartBar />,
-      path: "/admin"
+      path: "/admin",
+      roles: ["admin", "staff"]
     },
     {
-      title: "Movies",
+      title: "Quản Lý Phim",
       icon: <FaFilm />,
-      path: "/admin/movies"
+      path: "/admin/movies",
+      roles: ["admin"]
     },
     {
-      title: "Banner",
+      title: "Banner Quảng Cáo",
       icon: <FaImages />,
-      path: "/admin/banner"
+      path: "/admin/banner",
+      roles: ["admin"]
     },
     {
-      title: "Rooms",
+      title: "Phòng Chiếu",
       icon: <FaDoorOpen />,
-      path: "/admin/rooms"
+      path: "/admin/rooms",
+      roles: ["admin"]
     },
     {
-      title: "Showtimes",
+      title: "Suất Chiếu",
       icon: <FaClock />,
-      path: "/admin/showtimes"
+      path: "/admin/showtimes",
+      roles: ["admin"]
     },
     {
-      title: "Users",
-      icon: <FaUsers />,
-      path: "/admin/users"
-    },
-    {
-      title: "Bookings",
+      title: "Quản Lý Đơn Vé & Soát Vé",
       icon: <FaTicketAlt />,
-      path: "/admin/bookings"
+      path: "/admin/bookings",
+      roles: ["admin", "staff"]
+    },
+    {
+      title: "Đồ Ăn & Nước Uống",
+      icon: <FaUtensils />,
+      path: "/admin/foods",
+      roles: ["admin"]
+    },
+    {
+      title: "Quản Lý Voucher",
+      icon: <FaTags />,
+      path: "/admin/vouchers",
+      roles: ["admin"]
+    },
+    {
+      title: "Quản Lý Đánh Giá",
+      icon: <FaStar />,
+      path: "/admin/reviews",
+      roles: ["admin"]
+    },
+    {
+      title: "Quản Lý Liên Hệ & Phản Hồi",
+      icon: <FaEnvelope />,
+      path: "/admin/contacts",
+      roles: ["admin"]
+    },
+    {
+      title: "Quản Lý Tài Khoản & Khách Hàng",
+      icon: <FaUsers />,
+      path: "/admin/users",
+      roles: ["admin"]
     }
   ];
 
+  // Nếu là Staff, chỉ giữ lại Tổng Quan và Quản Lý Đơn Vé & Soát Vé
+  const menus = allMenus.filter(item => item.roles.includes(user?.role || "admin"));
+
   return (
     <aside className="sidebar">
-      <div className="logo">
-        🎬 Admin Panel
+      <div className="logo" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <span>🎬 TNA CINEMA</span>
+        <span style={{ fontSize: '12px', opacity: 0.8, color: isStaff ? '#38bdf8' : '#fbbf24' }}>
+          {isStaff ? '🎫 Trang Nhân Viên' : '👑 Trang Quản Trị'}
+        </span>
       </div>
 
       <ul>
@@ -64,7 +109,6 @@ const Sidebar = () => {
               }
             >
               <span>{item.icon}</span>
-
               <span>{item.title}</span>
             </NavLink>
           </li>

@@ -2,6 +2,7 @@ import axios from 'axios';
 import type {
   AuthUser,
   ForgotPasswordPayload,
+  ResetPasswordPayload,
   LoginPayload,
   RegisterPayload,
 } from '../types/auth';
@@ -28,6 +29,13 @@ export const forgotPassword = async (
   return data;
 };
 
+export const resetPassword = async (
+  payload: ResetPasswordPayload
+): Promise<{ message: string }> => {
+  const { data } = await api.post<{ message: string }>('/reset-password', payload);
+  return data;
+};
+
 export const saveAuthUser = (user: AuthUser): void => {
   localStorage.setItem('user', JSON.stringify(user));
   localStorage.setItem('token', user.token);
@@ -41,6 +49,10 @@ export const getAuthUser = (): AuthUser | null => {
   } catch {
     return null;
   }
+};
+
+export const getToken = (): string => {
+  return localStorage.getItem('token') || '';
 };
 
 export const logout = (): void => {

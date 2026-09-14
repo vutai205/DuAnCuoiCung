@@ -274,6 +274,27 @@
   color: #ff6b6b;
 }
 
+.auth-input-wrap input.has-error {
+  border-color: #ff4d4f !important;
+  background: rgba(255, 77, 79, 0.08) !important;
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.25) !important;
+}
+
+.auth-field-error {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: #ff6b6b;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  animation: fadeInError 0.2s ease;
+}
+
+@keyframes fadeInError {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .auth-alert--success {
   background: rgba(46, 204, 113, 0.12);
   border: 1px solid rgba(46, 204, 113, 0.3);

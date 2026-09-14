@@ -12,10 +12,12 @@ const sendEmail = async (options) => {
 
     // 2. Define the email options
     const mailOptions = {
-        from: `Hệ Thống Đặt Vé <${process.env.EMAIL_USER}>`,
+        from: `TNA CINEMA <${process.env.EMAIL_USER}>`,
         to: options.email,
         subject: options.subject,
-        text: options.message
+        text: options.message,
+        html: options.html,
+        attachments: options.attachments || []
     };
 
     // 3. Actually send the email

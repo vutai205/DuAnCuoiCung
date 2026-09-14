@@ -17,9 +17,33 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'staff', 'admin'],
         default: 'user'
     },
+    status: {
+        type: Boolean,
+        default: true
+    },
+    avatar: {
+        type: String,
+        default: ""
+    },
+    phone: {
+        type: String,
+        default: ""
+    },
+    gender: {
+        type: String,
+        default: "Nam"
+    },
+    address: {
+        type: String,
+        default: ""
+    },
+    savedVouchers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Voucher'
+    }],
     resetPasswordOtp: String,
     resetPasswordOtpExpire: Date
 }, { timestamps: true });

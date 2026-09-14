@@ -15,14 +15,22 @@ const protect = async (req, res, next) => {
             // Tìm user dựa trên ID trong token và gán vào req.user (loại bỏ trường password)
             req.user = await User.findById(decoded.id).select('-password');
 
-            next(); // Cho phép đi tiếp vào Controller
+            if (!req.user) {
+                return res.status(401).json({ message: 'Tài khoản không tồn tại, vui lòng đăng nhập lại!' });
+            }
+
+            if (req.user.status === false) {
+                return res.status(403).json({ message: '⛔ Tài khoản của bạn đã bị khóa bởi Quản trị viên!' });
+            }
+
+            return next();
         } catch (error) {
-            res.status(401).json({ message: 'Không có quyền truy cập, token không hợp lệ!' });
+            return res.status(401).json({ message: 'Không có quyền truy cập, token không hợp lệ!' });
         }
     }
 
     if (!token) {
-        res.status(401).json({ message: 'Không có quyền truy cập, không tìm thấy token!' });
+        return res.status(401).json({ message: 'Không có quyền truy cập, không tìm thấy token!' });
     }
 };
 
@@ -34,4 +42,27 @@ const admin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin };
+const staffOrAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
+        next();
+    } else {
+        res.status(403).json({ message: 'Không có quyền truy cập, chỉ dành cho Nhân viên hoặc Admin!' });
+    }
+};
+
+const protectAdminOrStaff = staffOrAdmin;
+
+const optionalAuth = async (req, res, next) => {
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
+            req.user = await User.findById(decoded.id).select('-password');
+        } catch (error) {
+            // Ignore invalid token for optional auth
+        }
+    }
+    next();
+};
+
+module.exports = { protect, admin, staffOrAdmin, protectAdminOrStaff, optionalAuth };
