@@ -39,7 +39,9 @@ export default function TicketHistory() {
 
     try {
       const token = localStorage.getItem("token") || JSON.parse(localStorage.getItem("user") || "{}").token;
-      const res = await axios.post('/api/payment/create_payment_url', {
+      const endpoint = ticket.paymentMethod === 'momo' ? '/api/payment/create_momo_url' : '/api/payment/create_payment_url';
+
+      const res = await axios.post(endpoint, {
         bookingId: ticket._id,
         amount: ticket.totalPrice
       }, {
@@ -49,10 +51,10 @@ export default function TicketHistory() {
       if (res.data && res.data.paymentUrl) {
         window.location.href = res.data.paymentUrl;
       } else {
-        message.error("Không tạo được liên kết thanh toán VNPay!");
+        message.error("Không tạo được liên kết thanh toán!");
       }
     } catch (err: any) {
-      message.error(err.response?.data?.message || "Lỗi khi kết nối tới cổng thanh toán VNPay!");
+      message.error(err.response?.data?.message || "Lỗi khi kết nối tới cổng thanh toán!");
     }
   };
 
@@ -93,6 +95,8 @@ export default function TicketHistory() {
                   {ticket.status === "confirmed" ? (
                     isCash ? (
                       <Tag color="cyan">Giữ chỗ tại quầy (Thanh toán sau)</Tag>
+                    ) : ticket.paymentMethod === 'momo' ? (
+                      <Tag color="magenta">Đã thanh toán (MoMo)</Tag>
                     ) : (
                       <Tag color="green">Đã thanh toán (VNPay)</Tag>
                     )
@@ -114,10 +118,10 @@ export default function TicketHistory() {
                     className={`btn-view-ticket ${isExpired ? 'btn-cancelled-ticket' : ''}`}
                     onClick={() => setSelectedTicket(ticket)}
                   >
-                    {isExpired ? '🚫 Vé đã hủy' : '🎫 Xem vé'}
+                    {isExpired ? '🚫 Vé đã hủy' : ticket.status === 'pending' && !isCash ? '⏳ Vé chờ thanh toán' : '🎫 Xem vé'}
                   </button>
 
-                  {/* SECOND BUTTON: Thanh toán (Chỉ hiển thị khi pending & VNPay) */}
+                  {/* SECOND BUTTON: Thanh toán (Chỉ hiển thị khi pending & online payment) */}
                   {ticket.status === "pending" && !isCash && !isExpired && (
                     <button 
                       className="btn-pay-now"
@@ -150,7 +154,23 @@ export default function TicketHistory() {
                 <p style={{ color: '#ff8a8a', margin: '0 0 8px 0', fontSize: '0.9rem' }}>Lý do: Đã quá thời hạn giữ chỗ 5 phút mà chưa hoàn tất thanh toán.</p>
                 <span style={{ fontSize: '0.82rem', color: '#aaa' }}>⚠️ Mã QR đã bị vô hiệu hóa. Vui lòng thực hiện chọn lại ghế để đặt vé mới!</span>
               </div>
+            ) : selectedTicket.status === 'pending' && selectedTicket.paymentMethod !== 'cash' ? (
+              /* UNPAID PENDING TICKET: HIDE QR CODE, SHOW WARNING & PAY BUTTON */
+              <div style={{ background: 'rgba(234, 179, 8, 0.15)', border: '2px dashed #eab308', borderRadius: '12px', padding: '20px', textAlign: 'center', margin: '15px 0' }}>
+                <h3 style={{ color: '#eab308', margin: '0 0 8px 0', fontSize: '1.2rem', fontWeight: 800 }}>⏳ VÉ CHƯA THANH TOÁN (GIỮ CHỖ 5 PHÚT)</h3>
+                <p style={{ color: '#fef08a', margin: '0 0 12px 0', fontSize: '0.9rem' }}>
+                  Ghế đang được tạm giữ. Mã QR check-in chỉ được cấp sau khi bạn hoàn tất thanh toán!
+                </p>
+                <button 
+                  className="btn-pay-now" 
+                  onClick={() => handlePayNow(selectedTicket)}
+                  style={{ background: 'linear-gradient(135deg, #e50914 0%, #ff5252 100%)', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', boxShadow: '0 4px 15px rgba(229, 9, 20, 0.4)' }}
+                >
+                  💳 THANH TOÁN NGAY ({selectedTicket.paymentMethod === 'momo' ? 'MOMO' : 'VNPAY'})
+                </button>
+              </div>
             ) : (
+              /* CONFIRMED / PAID OR CASH TICKET: SHOW VALID QR CODE */
               <div className="ticket-barcode-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '15px' }}>
                 <div style={{ background: '#fff', padding: '12px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
                   <QRCode value={selectedTicket.ticketCode || selectedTicket._id} size={160} color="#000" bgColor="#fff" />
@@ -186,8 +206,12 @@ export default function TicketHistory() {
               </div>
               <div className="info-line">
                 <span>Hình thức:</span>
-                <Tag color={selectedTicket.paymentMethod === 'cash' ? 'cyan' : 'blue'}>
-                  {selectedTicket.paymentMethod === 'cash' ? '💵 Thanh toán tại quầy' : '💳 Thanh toán VNPay Online'}
+                <Tag color={selectedTicket.paymentMethod === 'cash' ? 'cyan' : selectedTicket.paymentMethod === 'momo' ? 'magenta' : 'blue'}>
+                  {selectedTicket.paymentMethod === 'cash' 
+                    ? '💵 Thanh toán tại quầy' 
+                    : selectedTicket.paymentMethod === 'momo'
+                    ? '📱 Ví MoMo (Sandbox)'
+                    : '💳 VNPay Gateway Online'}
                 </Tag>
               </div>
 
@@ -202,7 +226,9 @@ export default function TicketHistory() {
 
             <div className="ticket-modal-footer">
               {selectedTicket.status === 'cancelled' || (selectedTicket.paymentMethod !== 'cash' && selectedTicket.expiresAt && new Date(selectedTicket.expiresAt).getTime() < Date.now()) ? (
-                <p style={{ fontSize: '0.85rem', color: '#ff4d4f', fontWeight: 600 }}>* Đơn hàng này không còn giá trị sử dụng.</p>
+                <p style={{ fontSize: '0.85rem', color: '#ff4d4f', fontWeight: 600 }}>* Đơn hàng này không còn giá trị sử dụng (Đã hủy 5p).</p>
+              ) : selectedTicket.status === 'pending' && selectedTicket.paymentMethod !== 'cash' ? (
+                <p style={{ fontSize: '0.85rem', color: '#eab308', fontWeight: 600 }}>⚠️ Vé chưa được thanh toán! Vui lòng hoàn tất thanh toán để nhận mã vé QR vào phòng chiếu.</p>
               ) : (
                 <p style={{ fontSize: '0.8rem', color: '#888' }}>* Vui lòng đưa mã QR này cho nhân viên soát vé tại rạp để in vé vào phòng chiếu.</p>
               )}
