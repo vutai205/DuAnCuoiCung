@@ -126,11 +126,21 @@ const Rooms: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
+      const cleanName = values.name.trim().replace(/\s+/g, ' ');
+      const isDuplicate = rooms.some(
+        r => r.name.trim().toLowerCase() === cleanName.toLowerCase() && r._id !== editingRoom?._id
+      );
+      if (isDuplicate) {
+        message.error(`⚠️ Tên phòng chiếu "${cleanName}" đã tồn tại! Vui lòng chọn tên khác để tránh trùng lặp.`);
+        return;
+      }
+
       const token = getToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const calculatedTotal = (values.rowsCount || 8) * (values.seatsPerRow || 10);
       const payload = {
         ...values,
+        name: cleanName,
         totalSeats: calculatedTotal
       };
 
@@ -711,7 +721,7 @@ const Rooms: React.FC = () => {
                               type="button"
                               onClick={() => handleSeatClick(seat.seatName)}
                               style={{
-                                width: isCouple ? '64px' : '36px',
+                                width: '36px',
                                 height: '34px',
                                 borderRadius: '6px',
                                 background: bgColor,
@@ -770,7 +780,7 @@ const DropdownRowMenu: React.FC<{ rowLetter: string; onSelectRowType: (type: 're
       <Select
         defaultValue={rowLetter}
         value={rowLetter}
-        style={{ width: 52 }}
+        style={{ width: 90 }}
         size="small"
         onChange={(val) => {
           if (val !== rowLetter) {

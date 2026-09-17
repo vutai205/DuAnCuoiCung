@@ -161,7 +161,7 @@ const BookingPage: React.FC = () => {
 
     if (showtimeId) fetchSeatLayout();
 
-    // Auto-refresh seat layout every 5 seconds to get real-time seat locks
+    // Auto-refresh seat layout every 3 seconds to get real-time seat locks
     const pollInterval = setInterval(() => {
       if (showtimeId) {
         axios.get(`/api/showtimes/${showtimeId}/seats`).then(res => {
@@ -170,7 +170,7 @@ const BookingPage: React.FC = () => {
           }
         }).catch(err => console.error("Error polling seats:", err));
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(pollInterval);
   }, [showtimeId]);
@@ -196,6 +196,42 @@ const BookingPage: React.FC = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, [timeLeft, selectedSeats.length]);
+
+  // Sync held seats to Database immediately when user toggles a seat
+  const syncHoldSeats = async (nextSeats: string[]) => {
+    try {
+      const token = localStorage.getItem("token") || JSON.parse(localStorage.getItem("user") || "{}").token;
+      if (!token) return;
+
+      const res = await axios.post('/api/bookings/hold-seats', {
+        showtimeId,
+        seats: nextSeats
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.data && res.data.expiresAt) {
+        const remainingSecs = Math.max(0, Math.floor((new Date(res.data.expiresAt).getTime() - Date.now()) / 1000));
+        setTimeLeft(remainingSecs);
+      }
+    } catch (err: any) {
+      if (err.response?.data?.message) {
+        antMessage.error(err.response.data.message);
+      }
+      // Refetch seat layout to show updated booked seats
+      if (showtimeId) {
+        axios.get(`/api/showtimes/${showtimeId}/seats`).then(res => {
+          if (res.data && res.data.seats) {
+            setShowtimeData(prev => prev ? { ...prev, seats: res.data.seats } : null);
+          }
+        });
+      }
+      // Revert local seats selection if hold failed
+      if (err.response?.data?.takenSeat) {
+        setSelectedSeats(prev => prev.filter(s => s !== err.response.data.takenSeat));
+      }
+    }
+  };
 
   // Get couple seat pair (e.g. H1 & H2, H3 & H4)
   const getCouplePair = (seatName: string, allSeats: SeatItem[]) => {
@@ -253,7 +289,8 @@ const BookingPage: React.FC = () => {
   };
 
   const handleToggleSeat = (seat: SeatItem) => {
-    if (seat.isBooked) return;
+    const isSelected = selectedSeats.includes(seat.seatName);
+    if (seat.isBooked && !isSelected) return;
 
     const targetSeats = getCouplePair(seat.seatName, showtimeData?.seats || []);
     const isAlreadySelected = targetSeats.every(s => selectedSeats.includes(s));
@@ -276,10 +313,8 @@ const BookingPage: React.FC = () => {
     }
 
     setSelectedSeats(nextSeats);
-    // Reset timer to 5 minutes when user modifies seat selection
-    if (nextSeats.length > 0) {
-      setTimeLeft(300);
-    }
+    // Sync instant seat hold to Database
+    syncHoldSeats(nextSeats);
   };
 
   const handleComboChange = (id: string, delta: number) => {
@@ -628,8 +663,10 @@ const BookingPage: React.FC = () => {
                             {pair.map(seat => {
                               const isSelected = selectedSeats.includes(seat.seatName);
                               const isMaintenance = seat.type === 'maintenance' || (seat as any).status === 'maintenance';
+                              const isBookedByOther = seat.isBooked && !isSelected;
+
                               let seatClass = `seat-btn ${seat.type}`;
-                              if (seat.isBooked) seatClass += ' booked';
+                              if (isBookedByOther) seatClass += ' booked';
                               if (isMaintenance) seatClass += ' maintenance';
                               if (isSelected) seatClass += ' selected';
 
@@ -637,7 +674,7 @@ const BookingPage: React.FC = () => {
                                 <button
                                   key={seat.seatName}
                                   className={seatClass}
-                                  disabled={seat.isBooked || isMaintenance}
+                                  disabled={isBookedByOther || isMaintenance}
                                   onClick={() => handleToggleSeat(seat)}
                                   title={isMaintenance ? `${seat.seatName} - Ghế đang bảo trì/hỏng, không thể chọn` : `${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
                                 >
@@ -661,8 +698,10 @@ const BookingPage: React.FC = () => {
                     {rowSeats.map(seat => {
                       const isSelected = selectedSeats.includes(seat.seatName);
                       const isMaintenance = seat.type === 'maintenance' || (seat as any).status === 'maintenance';
+                      const isBookedByOther = seat.isBooked && !isSelected;
+
                       let seatClass = `seat-btn ${seat.type}`;
-                      if (seat.isBooked) seatClass += ' booked';
+                      if (isBookedByOther) seatClass += ' booked';
                       if (isMaintenance) seatClass += ' maintenance';
                       if (isSelected) seatClass += ' selected';
 
@@ -670,7 +709,7 @@ const BookingPage: React.FC = () => {
                         <button
                           key={seat.seatName}
                           className={seatClass}
-                          disabled={seat.isBooked || isMaintenance}
+                          disabled={isBookedByOther || isMaintenance}
                           onClick={() => handleToggleSeat(seat)}
                           title={isMaintenance ? `${seat.seatName} - Ghế đang bảo trì/hỏng, không thể chọn` : `${seat.seatName} (${seat.type.toUpperCase()}) - ${calculateSeatPrice(seat.seatName).toLocaleString('vi-VN')}đ`}
                         >

@@ -123,9 +123,11 @@ exports.createRoom = async (req, res) => {
             return res.status(400).json({ message: 'Tên phòng chiếu không được để trống!' });
         }
 
-        const existingRoom = await Room.findOne({ name: name.trim() });
+        const cleanName = name.trim().replace(/\s+/g, ' ');
+        const regexName = new RegExp(`^${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+        const existingRoom = await Room.findOne({ name: regexName });
         if (existingRoom) {
-            return res.status(400).json({ message: `Tên phòng chiếu "${name.trim()}" đã tồn tại! Vui lòng nhập tên khác.` });
+            return res.status(400).json({ message: `Tên phòng chiếu "${cleanName}" đã tồn tại trong hệ thống! Vui lòng nhập tên khác.` });
         }
 
         const rowsLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
@@ -137,7 +139,7 @@ exports.createRoom = async (req, res) => {
         const seatLayout = generateLayoutByType(type, actualRows, actualCols, totalSeats);
 
         const room = new Room({
-            name: name.trim(),
+            name: cleanName,
             type,
             rowsCount: actualRows,
             seatsPerRow: actualCols,
@@ -164,12 +166,14 @@ exports.updateRoom = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy phòng chiếu!' });
         }
 
-        if (req.body.name && req.body.name.trim() !== room.name) {
-            const existingRoom = await Room.findOne({ name: req.body.name.trim() });
+        if (req.body.name) {
+            const cleanName = req.body.name.trim().replace(/\s+/g, ' ');
+            const regexName = new RegExp(`^${cleanName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+            const existingRoom = await Room.findOne({ name: regexName, _id: { $ne: room._id } });
             if (existingRoom) {
-                return res.status(400).json({ message: `Tên phòng chiếu "${req.body.name.trim()}" đã tồn tại!` });
+                return res.status(400).json({ message: `Tên phòng chiếu "${cleanName}" đã tồn tại!` });
             }
-            room.name = req.body.name.trim();
+            room.name = cleanName;
         }
 
         if (req.body.status) {

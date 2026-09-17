@@ -39,6 +39,7 @@ export default function VoucherManager() {
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+  const currentDiscountType = Form.useWatch("discountType", form);
 
   const getHeaders = () => {
     const token = localStorage.getItem("token") || JSON.parse(localStorage.getItem("user") || "{}").token;
@@ -66,6 +67,11 @@ export default function VoucherManager() {
   }, []);
 
   const handleCreateVoucher = async (values: any) => {
+    if (values.discountType === "percent" && Number(values.discountValue) > 100) {
+      message.error("🚫 Mức giảm giá theo phần trăm không được vượt quá 100%!");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -297,22 +303,46 @@ export default function VoucherManager() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <Form.Item label="Loại giảm giá" name="discountType" rules={[{ required: true }]}>
               <Select
+                onChange={() => {
+                  form.setFieldsValue({ discountValue: undefined, maxDiscount: undefined });
+                }}
                 options={[
-                  { label: "Cố định (Số tiền đ)", value: "fixed" },
-                  { label: "Theo phần trăm (%)", value: "percent" },
+                  { label: "💵 Cố định (Số tiền đ)", value: "fixed" },
+                  { label: "🏷️ Theo phần trăm (%)", value: "percent" },
                 ]}
               />
             </Form.Item>
 
             <Form.Item
-              label="Giá trị giảm"
+              label={currentDiscountType === "percent" ? "Mức giảm (%)" : "Số tiền giảm (đ)"}
               name="discountValue"
-              rules={[{ required: true, message: "Vui lòng nhập giá trị giảm!" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập giá trị giảm!" },
+                {
+                  validator: (_, value) => {
+                    if (value !== undefined && value !== null) {
+                      if (currentDiscountType === "percent") {
+                        if (value <= 0) return Promise.reject("Phần trăm giảm phải lớn hơn 0%!");
+                        if (value > 100) return Promise.reject("🚫 Phần trăm giảm không được vượt quá 100%!");
+                      } else {
+                        if (value <= 0) return Promise.reject("Số tiền giảm phải lớn hơn 0đ!");
+                      }
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
+              extra={
+                currentDiscountType === "percent"
+                  ? "⚠️ Giảm theo phần trăm (Tối đa 100%)"
+                  : "💡 Số tiền giảm trực tiếp (VD: 20000 = 20.000đ)"
+              }
             >
               <InputNumber
                 style={{ width: "100%" }}
                 min={1}
-                placeholder="VD: 20000 hoặc 10"
+                addonAfter={currentDiscountType === "percent" ? "%" : "đ"}
+                placeholder={currentDiscountType === "percent" ? "VD: 10, 20 hoặc 50" : "VD: 20000 hoặc 50000"}
                 formatter={(val) => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
               />
             </Form.Item>

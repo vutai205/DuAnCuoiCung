@@ -15,7 +15,7 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: 1.8fr 1.8fr 1fr 1fr 1.3fr 1.5fr;
+  grid-template-columns: 1.8fr 1.8fr 1fr 1fr 1.3fr 1.6fr;
   padding: 1rem 1.2rem;
   background: rgba(0, 0, 0, 0.4);
   font-weight: 700;
@@ -25,7 +25,7 @@
 
 .table-row {
   display: grid;
-  grid-template-columns: 1.8fr 1.8fr 1fr 1fr 1.3fr 1.5fr;
+  grid-template-columns: 1.8fr 1.8fr 1fr 1fr 1.3fr 1.6fr;
   padding: 1.1rem 1.2rem;
   align-items: center;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -66,15 +66,14 @@
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
-/* Sleek, perfectly proportioned compact buttons */
-.btn-pay-now,
-.btn-view-ticket {
-  width: 115px;
+/* Sleek, perfectly proportioned compact table buttons */
+.table-row .btn-pay-now,
+.table-row .btn-view-ticket {
   height: 34px;
-  min-width: 115px;
-  max-width: 115px;
+  padding: 0 12px;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
@@ -88,7 +87,7 @@
   transition: all 0.2s ease;
 }
 
-.btn-pay-now {
+.table-row .btn-pay-now {
   background: linear-gradient(135deg, #e50914 0%, #ff5252 100%);
   border: none;
   color: #fff;
@@ -96,31 +95,60 @@
   box-shadow: 0 3px 10px rgba(229, 9, 20, 0.3);
 }
 
-.btn-pay-now:hover {
+.table-row .btn-pay-now:hover {
   transform: translateY(-1px);
   box-shadow: 0 5px 14px rgba(229, 9, 20, 0.5);
 }
 
-.btn-view-ticket {
+.table-row .btn-view-ticket {
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
-.btn-view-ticket:hover {
+.table-row .btn-view-ticket:hover {
   border-color: #e50914;
   background: rgba(229, 9, 20, 0.2);
 }
 
-.btn-view-ticket.btn-cancelled-ticket {
+.table-row .btn-view-ticket.btn-cancelled-ticket {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.4);
   color: #ef4444;
 }
 
-.btn-view-ticket.btn-cancelled-ticket:hover {
+.table-row .btn-view-ticket.btn-cancelled-ticket:hover {
   background: rgba(239, 68, 68, 0.25);
   border-color: #ef4444;
+}
+
+/* Modal Pay Now Button - Full width & auto sizing */
+.btn-modal-pay-now {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  min-height: 42px;
+  padding: 10px 20px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #e50914 0%, #ff5252 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4);
+  transition: all 0.2s ease;
+  white-space: normal;
+  text-align: center;
+}
+
+.btn-modal-pay-now:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6);
 }
 
 /* Modal Ticket Overlay */

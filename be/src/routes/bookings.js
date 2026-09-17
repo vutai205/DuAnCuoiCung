@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { 
     createBooking, 
+    holdSeats,
+    releaseSeats,
     getMyBookings, 
     getBookings, 
     getBookingById,
@@ -22,6 +24,8 @@ router.put('/:id/checkin', protect, protectAdminOrStaff, checkinBooking);
 router.put('/:id/cancel-checkin', protect, protectAdminOrStaff, cancelCheckinBooking);
 
 // User routes
+router.post('/hold-seats', protect, holdSeats);
+router.post('/release-seats', protect, releaseSeats);
 router.post('/', protect, createBooking);
 router.get('/my-bookings', protect, getMyBookings);
 router.get('/:id', protect, getBookingById);
