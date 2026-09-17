@@ -86,7 +86,7 @@ const expirePendingBookings = async (showtimeId) => {
         paymentMethod: { $ne: 'cash' },
         $or: [
             { expiresAt: { $ne: null, $lt: now } },
-            { createdAt: { $lt: new Date(now.getTime() - holdTimeoutMs) } }
+            { expiresAt: null, createdAt: { $lt: new Date(now.getTime() - holdTimeoutMs) } }
         ]
     };
 
@@ -224,6 +224,132 @@ exports.createBooking = async (req, res) => {
     }
 };
 
+// @desc    Hold seats instantly when user selects them in UI
+// @route   POST /api/bookings/hold-seats
+exports.holdSeats = async (req, res) => {
+    try {
+        const { showtimeId, seats } = req.body;
+        const userId = req.user ? req.user._id : req.body.userId;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
+        if (!showtimeId) {
+            return res.status(400).json({ message: 'Showtime ID is required' });
+        }
+
+        // Auto-expire old pending seat holds
+        await expirePendingBookings(showtimeId);
+
+        const now = new Date();
+        const seatsArray = Array.isArray(seats) ? seats : [];
+
+        // If user unselected all seats: release their pending hold
+        if (seatsArray.length === 0) {
+            await Booking.updateMany({
+                showtime: showtimeId,
+                user: userId,
+                status: 'pending'
+            }, {
+                status: 'cancelled',
+                paymentStatus: 'failed'
+            });
+            return res.json({ success: true, message: 'Đã giải phóng ghế', seats: [] });
+        }
+
+        // Check if any requested seat is already taken by ANOTHER user
+        const existingBookings = await Booking.find({
+            showtime: showtimeId,
+            status: { $ne: 'cancelled' },
+            $or: [
+                { paymentMethod: 'cash' },
+                { expiresAt: { $gt: now } }
+            ]
+        });
+
+        const otherUserBookings = existingBookings.filter(
+            b => b.user.toString() !== userId.toString()
+        );
+
+        let otherUserSeats = [];
+        otherUserBookings.forEach(b => {
+            otherUserSeats = otherUserSeats.concat(b.seats);
+        });
+
+        const takenSeat = seatsArray.find(seat => otherUserSeats.includes(seat));
+        if (takenSeat) {
+            return res.status(400).json({ 
+                message: `Ghế ${takenSeat} vừa được người khác giữ chỗ. Vui lòng chọn ghế khác!`,
+                takenSeat 
+            });
+        }
+
+        // Upsert pending hold for this user
+        const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
+        const existingSameUserPending = existingBookings.find(
+            b => b.user.toString() === userId.toString() && b.status === 'pending'
+        );
+
+        let booking;
+        if (existingSameUserPending) {
+            existingSameUserPending.seats = seatsArray;
+            existingSameUserPending.expiresAt = expiresAt;
+            existingSameUserPending.createdAt = now;
+            booking = await existingSameUserPending.save();
+        } else {
+            const ticketCode = `TNA-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            booking = await Booking.create({
+                user: userId,
+                showtime: showtimeId,
+                seats: seatsArray,
+                combos: [],
+                totalPrice: 0,
+                paymentMethod: 'vnpay',
+                ticketCode,
+                expiresAt,
+                status: 'pending',
+                paymentStatus: 'unpaid'
+            });
+        }
+
+        res.json({
+            success: true,
+            bookingId: booking._id,
+            seats: booking.seats,
+            expiresAt: booking.expiresAt
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Release held seats
+// @route   POST /api/bookings/release-seats
+exports.releaseSeats = async (req, res) => {
+    try {
+        const { showtimeId } = req.body;
+        const userId = req.user ? req.user._id : req.body.userId;
+
+        if (!userId || !showtimeId) {
+            return res.status(400).json({ message: 'Missing userId or showtimeId' });
+        }
+
+        await Booking.updateMany({
+            showtime: showtimeId,
+            user: userId,
+            status: 'pending'
+        }, {
+            status: 'cancelled',
+            paymentStatus: 'failed'
+        });
+
+        res.json({ success: true, message: 'Đã giải phóng ghế' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Get booking by ID or ticket code
 // @route   GET /api/bookings/:id
 exports.getBookingById = async (req, res) => {
@@ -274,20 +400,8 @@ exports.getMyBookings = async (req, res) => {
     try {
         const userId = req.user ? req.user._id : req.query.userId;
         
-        // Auto expire old pending VNPay bookings
-        const now = new Date();
-        await Booking.updateMany({
-            user: userId,
-            status: 'pending',
-            paymentMethod: { $ne: 'cash' },
-            $or: [
-                { expiresAt: { $ne: null, $lt: now } },
-                { createdAt: { $lt: new Date(now.getTime() - 5 * 60 * 1000) } }
-            ]
-        }, {
-            status: 'cancelled',
-            paymentStatus: 'failed'
-        });
+        // Auto expire old pending seat holds
+        await expirePendingBookings();
 
         const bookings = await Booking.find({ user: userId }).populate({
             path: 'showtime',

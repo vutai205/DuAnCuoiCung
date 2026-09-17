@@ -117,6 +117,19 @@ exports.createVoucher = async (req, res) => {
             return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ mã voucher và giá trị giảm!' });
         }
 
+        const numDiscountValue = Number(discountValue);
+        const type = discountType || 'fixed';
+
+        if (type === 'percent') {
+            if (numDiscountValue <= 0 || numDiscountValue > 100) {
+                return res.status(400).json({ message: '⚠️ Mức giảm giá theo phần trăm phải nằm trong khoảng từ 1% đến 100%!' });
+            }
+        } else if (type === 'fixed') {
+            if (numDiscountValue <= 0) {
+                return res.status(400).json({ message: '⚠️ Số tiền giảm giá cố định phải lớn hơn 0đ!' });
+            }
+        }
+
         const existingVoucher = await Voucher.findOne({ code: code.trim().toUpperCase() });
         if (existingVoucher) {
             return res.status(400).json({ message: `Mã Voucher "${code.trim().toUpperCase()}" đã tồn tại trong hệ thống!` });
@@ -125,8 +138,8 @@ exports.createVoucher = async (req, res) => {
         const voucher = await Voucher.create({
             code: code.trim().toUpperCase(),
             description: description || '',
-            discountType: discountType || 'fixed',
-            discountValue: Number(discountValue),
+            discountType: type,
+            discountValue: numDiscountValue,
             minOrderValue: Number(minOrderValue) || 0,
             maxDiscount: maxDiscount ? Number(maxDiscount) : null,
             usageLimit: usageLimit !== undefined ? Number(usageLimit) : 100,
