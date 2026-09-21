@@ -22,12 +22,65 @@ function sortObject(obj) {
     return sorted;
 }
 
+const Showtime = require('../models/Showtime');
+
+// Helper: Lấy hoặc tính toán lại số tiền chính xác cho đơn đặt vé nếu thiếu hoặc bằng 0
+const getOrCalculateBookingAmount = async (bookingId, reqAmount) => {
+    let finalAmount = Number(reqAmount) || 0;
+    const booking = await Booking.findById(bookingId).populate({
+        path: 'showtime',
+        populate: { path: 'room' }
+    });
+
+    if (!booking) return { booking: null, amount: 0 };
+
+    if (finalAmount <= 0) {
+        finalAmount = Number(booking.totalPrice) || 0;
+    }
+
+    if (finalAmount <= 0 && booking.showtime && Array.isArray(booking.seats) && booking.seats.length > 0) {
+        const ticketPrice = booking.showtime.ticketPrice || 90000;
+        const vipSurcharge = booking.showtime.vipSurcharge || 15000;
+        const coupleSurcharge = booking.showtime.coupleSurcharge || 20000;
+        const seatLayout = booking.showtime.room?.seatLayout || [];
+
+        let calc = 0;
+        booking.seats.forEach(seatName => {
+            const sObj = seatLayout.find(s => s.seatName === seatName);
+            const sType = sObj ? sObj.type : 'standard';
+            let p = ticketPrice;
+            if (sType === 'vip') p += vipSurcharge;
+            if (sType === 'couple') p += coupleSurcharge;
+            calc += p;
+        });
+
+        if (booking.discountAmount) {
+            calc = Math.max(0, calc - booking.discountAmount);
+        }
+
+        finalAmount = calc;
+        booking.totalPrice = calc;
+        await booking.save();
+    }
+
+    return { booking, amount: finalAmount };
+};
+
 // @desc    Tạo link thanh toán VNPay
 // @route   POST /api/payment/create_payment_url
 // @access  Private
 exports.createPaymentUrl = async (req, res) => {
     try {
         const { bookingId, amount, bankCode } = req.body;
+        const { booking, amount: finalAmount } = await getOrCalculateBookingAmount(bookingId, amount);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn đặt vé!' });
+        }
+
+        if (finalAmount <= 0) {
+            return res.status(400).json({ message: 'Số tiền thanh toán không hợp lệ!' });
+        }
         
         let tmnCode = process.env.VNP_TMN_CODE;
         let secretKey = process.env.VNP_HASH_SECRET;
@@ -47,7 +100,7 @@ exports.createPaymentUrl = async (req, res) => {
         vnp_Params['vnp_TxnRef'] = bookingId; // Mã đơn hàng (Dùng luôn ID booking)
         vnp_Params['vnp_OrderInfo'] = 'Thanh toan cho ma GD:' + bookingId;
         vnp_Params['vnp_OrderType'] = 'other';
-        vnp_Params['vnp_Amount'] = amount * 100; // VNPay yêu cầu nhân 100
+        vnp_Params['vnp_Amount'] = finalAmount * 100; // VNPay yêu cầu nhân 100
         vnp_Params['vnp_ReturnUrl'] = returnUrl;
         vnp_Params['vnp_IpAddr'] = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
         vnp_Params['vnp_CreateDate'] = createDate;
@@ -136,6 +189,15 @@ exports.vnpayReturn = async (req, res) => {
 exports.createMomoUrl = async (req, res) => {
     try {
         const { bookingId, amount } = req.body;
+        const { booking, amount: finalAmount } = await getOrCalculateBookingAmount(bookingId, amount);
+
+        if (!booking) {
+            return res.status(404).json({ message: 'Không tìm thấy đơn đặt vé!' });
+        }
+
+        if (finalAmount <= 0) {
+            return res.status(400).json({ message: 'Số tiền thanh toán không hợp lệ!' });
+        }
 
         const partnerCode = process.env.MOMO_PARTNER_CODE || 'MOMO';
         const accessKey = process.env.MOMO_ACCESS_KEY || 'F8BBA842ECBC6517';
@@ -151,7 +213,7 @@ exports.createMomoUrl = async (req, res) => {
         const extraData = '';
         const lang = 'vi';
 
-        const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+        const rawSignature = `accessKey=${accessKey}&amount=${finalAmount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
 
         const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
 
@@ -160,7 +222,7 @@ exports.createMomoUrl = async (req, res) => {
             partnerName: 'TNA CINEMA',
             storeId: 'TNACinemaStore',
             requestId,
-            amount: String(amount),
+            amount: String(finalAmount),
             orderId,
             orderInfo,
             redirectUrl,
@@ -172,7 +234,7 @@ exports.createMomoUrl = async (req, res) => {
             signature
         };
 
-        const momoGatewayUrl = `http://localhost:5173/momo-payment?orderId=${orderId}&amount=${amount}&bookingId=${bookingId}&orderInfo=${encodeURIComponent(orderInfo)}`;
+        const momoGatewayUrl = `http://localhost:5173/momo-payment?orderId=${orderId}&amount=${finalAmount}&bookingId=${bookingId}&orderInfo=${encodeURIComponent(orderInfo)}`;
 
         try {
             const response = await axios.post(endpoint, requestBody, {

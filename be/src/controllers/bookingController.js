@@ -289,6 +289,25 @@ exports.holdSeats = async (req, res) => {
             });
         }
 
+        // Calculate total price for held seats
+        const showtime = await Showtime.findById(showtimeId).populate('room');
+        let calculatedTotal = 0;
+        if (showtime && showtime.room) {
+            const ticketPrice = showtime.ticketPrice || 90000;
+            const vipSurcharge = showtime.vipSurcharge || 15000;
+            const coupleSurcharge = showtime.coupleSurcharge || 20000;
+            const seatLayout = showtime.room.seatLayout || [];
+
+            seatsArray.forEach(seatName => {
+                const sObj = seatLayout.find(s => s.seatName === seatName);
+                const sType = sObj ? sObj.type : 'standard';
+                let p = ticketPrice;
+                if (sType === 'vip') p += vipSurcharge;
+                if (sType === 'couple') p += coupleSurcharge;
+                calculatedTotal += p;
+            });
+        }
+
         // Upsert pending hold for this user
         const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
         const existingSameUserPending = existingBookings.find(
@@ -298,6 +317,7 @@ exports.holdSeats = async (req, res) => {
         let booking;
         if (existingSameUserPending) {
             existingSameUserPending.seats = seatsArray;
+            existingSameUserPending.totalPrice = calculatedTotal;
             existingSameUserPending.expiresAt = expiresAt;
             existingSameUserPending.createdAt = now;
             booking = await existingSameUserPending.save();
@@ -308,7 +328,7 @@ exports.holdSeats = async (req, res) => {
                 showtime: showtimeId,
                 seats: seatsArray,
                 combos: [],
-                totalPrice: 0,
+                totalPrice: calculatedTotal,
                 paymentMethod: 'vnpay',
                 ticketCode,
                 expiresAt,
