@@ -45,7 +45,7 @@ const BookingPage: React.FC = () => {
   const [showtimeData, setShowtimeData] = useState<ShowtimeData | null>(null);
   const [movieInfo, setMovieInfo] = useState<{ title: string; poster: string; duration: number } | null>(null);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  
+
   // Timer 5 minutes seat hold
   const [timeLeft, setTimeLeft] = useState<number>(300);
 
@@ -135,10 +135,10 @@ const BookingPage: React.FC = () => {
             const myBookingsRes = await axios.get('/api/bookings/my-bookings', {
               headers: { Authorization: `Bearer ${token}` }
             });
-            const activePending = myBookingsRes.data.find((b: any) => 
-              b.showtime?._id === showtimeId && 
-              b.status === 'pending' && 
-              b.expiresAt && 
+            const activePending = myBookingsRes.data.find((b: any) =>
+              b.showtime?._id === showtimeId &&
+              b.status === 'pending' &&
+              b.expiresAt &&
               new Date(b.expiresAt).getTime() > Date.now()
             );
 
@@ -239,7 +239,7 @@ const BookingPage: React.FC = () => {
     if (!match) return [seatName];
     const rowLetter = match[1];
     const seatNum = parseInt(match[2], 10);
-    
+
     const currentSeatObj = allSeats.find(s => s.seatName === seatName);
     if (currentSeatObj?.type !== 'couple') return [seatName];
 
@@ -759,15 +759,15 @@ const BookingPage: React.FC = () => {
           {/* Seat Legends with Specific Prices */}
           <div className="seat-legends">
             <div className="legend-item">
-              <span className="legend-box regular"></span> 
+              <span className="legend-box regular"></span>
               Ghế Thường ({basePrice.toLocaleString('vi-VN')}đ)
             </div>
             <div className="legend-item">
-              <span className="legend-box vip"></span> 
+              <span className="legend-box vip"></span>
               Ghế VIP ({vipPrice.toLocaleString('vi-VN')}đ)
             </div>
             <div className="legend-item">
-              <span className="legend-box couple"></span> 
+              <span className="legend-box couple"></span>
               Ghế Đôi ({couplePrice.toLocaleString('vi-VN')}đ/cặp)
             </div>
             <div className="legend-item">
@@ -817,7 +817,7 @@ const BookingPage: React.FC = () => {
               </div>
               <div className="summary-row">
                 <span className="label">Rạp / Phòng:</span>
-                <span className="value">VENRI CINEMA - {showtimeData.room}</span>
+                <span className="value">TNA CINEMA - {showtimeData.room}</span>
               </div>
               <div className="summary-row">
                 <span className="label">Suất chiếu:</span>

@@ -147,6 +147,8 @@ exports.createBooking = async (req, res) => {
             showtime: showtimeId,
             status: { $ne: 'cancelled' },
             $or: [
+                { paymentStatus: 'paid' },
+                { status: 'confirmed' },
                 { paymentMethod: 'cash' },
                 { expiresAt: { $gt: now } }
             ]
@@ -263,6 +265,8 @@ exports.holdSeats = async (req, res) => {
             showtime: showtimeId,
             status: { $ne: 'cancelled' },
             $or: [
+                { paymentStatus: 'paid' },
+                { status: 'confirmed' },
                 { paymentMethod: 'cash' },
                 { expiresAt: { $gt: now } }
             ]
