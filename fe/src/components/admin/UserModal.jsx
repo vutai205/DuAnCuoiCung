@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { message } from "antd";
 
 const UserModal = ({
     show,
@@ -52,18 +53,18 @@ const UserModal = ({
         e.preventDefault();
 
         if (!formData.name.trim()) {
-            return alert("Vui lòng nhập họ tên");
+            return message.warning("Vui lòng nhập họ tên");
         }
 
         if (!formData.email.trim()) {
-            return alert("Vui lòng nhập email");
+            return message.warning("Vui lòng nhập email");
         }
 
         if (
             !editingUser &&
             !formData.password.trim()
         ) {
-            return alert("Vui lòng nhập mật khẩu");
+            return message.warning("Vui lòng nhập mật khẩu");
         }
 
         onSubmit(formData);

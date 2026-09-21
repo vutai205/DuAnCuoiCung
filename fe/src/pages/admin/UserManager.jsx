@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { message } from "antd";
 
 import SearchUser from "../../components/admin/SearchUser";
 import UserTable from "../../components/admin/UserTable";
@@ -93,13 +94,13 @@ const UserManager = () => {
 
                 await updateUser(editingUser._id, formData);
 
-                alert("Cập nhật thành công");
+                message.success("Cập nhật thành công");
 
             } else {
 
                 await createUser(formData);
 
-                alert("Thêm tài khoản thành công");
+                message.success("Thêm tài khoản thành công");
 
             }
 
@@ -111,7 +112,7 @@ const UserManager = () => {
 
             console.log(err);
 
-            alert("Có lỗi xảy ra");
+            message.error("Có lỗi xảy ra");
 
         }
 
@@ -123,13 +124,14 @@ const UserManager = () => {
 
             await deleteUser(id);
 
-            alert("Đã xóa");
+            message.success("Đã xóa tài khoản thành công");
 
             loadUsers();
 
         } catch (err) {
 
             console.log(err);
+            message.error("Không thể xóa tài khoản");
 
         }
 

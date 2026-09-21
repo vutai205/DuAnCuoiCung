@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { QRCode, message as antMessage } from 'antd';
+import { QRCode, message as antMessage, Modal } from 'antd';
 import { getAuthUser, getToken } from '../../services/authApi';
 import './BookingPage.css';
 
@@ -301,14 +301,24 @@ const BookingPage: React.FC = () => {
     } else {
       const toAdd = targetSeats.filter(s => !selectedSeats.includes(s));
       if (selectedSeats.length + toAdd.length > 8) {
-        alert('Bạn chỉ được chọn tối đa 8 ghế trong một lần đặt!');
+        Modal.warning({
+          title: 'Giới hạn số lượng ghế',
+          content: 'Bạn chỉ được chọn tối đa 8 ghế trong một lần đặt!',
+          okText: 'Đã hiểu',
+          centered: true
+        });
         return;
       }
       nextSeats = [...selectedSeats, ...toAdd];
     }
 
     if (nextSeats.length > 0 && checkIsolatedEmptySeat(nextSeats, showtimeData?.seats || [])) {
-      alert('⚠️ Vui lòng không để trống 1 ghế đơn ở giữa các ghế chọn!');
+      Modal.warning({
+        title: 'Lưu ý chọn ghế phòng chiếu',
+        content: '⚠️ Vui lòng không để trống 1 ghế đơn ở giữa các ghế chọn!',
+        okText: 'Đã hiểu',
+        centered: true
+      });
       return;
     }
 
@@ -500,8 +510,15 @@ const BookingPage: React.FC = () => {
 
   const handleCreateBooking = async () => {
     if (!user) {
-      alert('Vui lòng đăng nhập để tiến hành đặt vé!');
-      navigate('/login');
+      Modal.info({
+        title: 'Yêu cầu đăng nhập',
+        content: 'Vui lòng đăng nhập tài khoản để tiến hành đặt vé xem phim!',
+        okText: 'Đăng nhập ngay',
+        cancelText: 'Hủy',
+        okCancel: true,
+        centered: true,
+        onOk: () => navigate('/login')
+      });
       return;
     }
 
@@ -511,12 +528,22 @@ const BookingPage: React.FC = () => {
     }
 
     if (selectedSeats.length === 0) {
-      alert('Vui lòng chọn ít nhất 1 ghế ngồi!');
+      Modal.warning({
+        title: 'Chưa chọn ghế',
+        content: 'Vui lòng chọn ít nhất 1 ghế ngồi trên sơ đồ!',
+        okText: 'Đã hiểu',
+        centered: true
+      });
       return;
     }
 
     if (timeLeft <= 0) {
-      alert('Thời gian giữ chỗ 5 phút đã hết hạn. Vui lòng chọn lại ghế!');
+      Modal.error({
+        title: 'Hết hạn giữ chỗ',
+        content: 'Thời gian giữ chỗ 5 phút đã hết hạn. Vui lòng chọn lại ghế!',
+        okText: 'Đã hiểu',
+        centered: true
+      });
       return;
     }
 
@@ -574,7 +601,12 @@ const BookingPage: React.FC = () => {
 
       setCreatedBooking(booking);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn đặt vé');
+      Modal.error({
+        title: 'Đặt vé không thành công',
+        content: err.response?.data?.message || 'Có lỗi xảy ra khi tạo đơn đặt vé. Vui lòng thử lại!',
+        okText: 'Đóng',
+        centered: true
+      });
     } finally {
       setIsSubmitting(false);
     }
