@@ -147,9 +147,10 @@ export default function BookingList() {
 
   const handleScanOrSearchQR = async (code: string) => {
     if (!code.trim()) return;
+    const cleanCode = code.trim().replace(/^#/, '');
     setLoading(true);
     try {
-      const res = await axios.get(`/api/bookings/${code.trim()}`, getHeaders());
+      const res = await axios.get(`/api/bookings/${encodeURIComponent(cleanCode)}`, getHeaders());
       if (res.data) {
         handleOpenDetail(res.data);
         message.success("Đã tìm thấy thông tin vé!");
@@ -283,9 +284,10 @@ export default function BookingList() {
 
   // Print ALL ticket stubs together
   const handlePrintTicket = async (record: Booking) => {
-    const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
-    if (isUnpaidVnpay) {
-      message.error("⚠️ Khách chưa hoàn tất thanh toán VNPay Online! Không thể in vé.");
+    const isUnpaidOnline = record.paymentMethod !== 'cash' && record.paymentStatus !== 'paid' && record.status === 'pending';
+    if (isUnpaidOnline) {
+      const methodText = record.paymentMethod === 'momo' ? 'MoMo' : 'VNPay';
+      message.error(`⚠️ Khách chưa hoàn tất thanh toán ${methodText} Online! Không thể in vé.`);
       return;
     }
 
@@ -322,9 +324,10 @@ export default function BookingList() {
 
   // Print single individual ticket/combo stub
   const handlePrintSingleItem = async (record: Booking, stubItem: any) => {
-    const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
-    if (isUnpaidVnpay) {
-      message.error("⚠️ Khách chưa hoàn tất thanh toán VNPay Online! Không thể in vé.");
+    const isUnpaidOnline = record.paymentMethod !== 'cash' && record.paymentStatus !== 'paid' && record.status === 'pending';
+    if (isUnpaidOnline) {
+      const methodText = record.paymentMethod === 'momo' ? 'MoMo' : 'VNPay';
+      message.error(`⚠️ Khách chưa hoàn tất thanh toán ${methodText} Online! Không thể in vé.`);
       return;
     }
 
@@ -351,9 +354,10 @@ export default function BookingList() {
   };
 
   const handleCheckin = async (record: Booking) => {
-    const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
-    if (isUnpaidVnpay) {
-      message.error("⚠️ Khách chưa hoàn tất thanh toán VNPay Online! Không thể Check-in.");
+    const isUnpaidOnline = record.paymentMethod !== 'cash' && record.paymentStatus !== 'paid' && record.status === 'pending';
+    if (isUnpaidOnline) {
+      const methodText = record.paymentMethod === 'momo' ? 'MoMo' : 'VNPay';
+      message.error(`⚠️ Khách chưa hoàn tất thanh toán ${methodText} Online! Không thể Check-in.`);
       return;
     }
 
@@ -504,25 +508,35 @@ export default function BookingList() {
       width: 145,
       align: "center" as const,
       render: (status: string, record: Booking) => {
-        const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
+        const isUnpaidOnline = record.paymentMethod !== 'cash' && record.paymentStatus !== 'paid' && record.status === 'pending';
         return (
           <Space direction="vertical" size="small" style={{ width: "100%" }}>
             <Tag
               color={
                 status === "confirmed"
-                  ? "green"
+                  ? record.paymentMethod === 'cash'
+                    ? "cyan"
+                    : record.paymentMethod === 'momo'
+                    ? "magenta"
+                    : "green"
                   : status === "cancelled"
                   ? "red"
-                  : isUnpaidVnpay
+                  : isUnpaidOnline
                   ? "volcano"
                   : "orange"
               }
               style={{ margin: 0 }}
             >
               {status === "confirmed"
-                ? record.paymentMethod === 'cash' ? "Thanh toán tại quầy" : "Thành công (VNPay)"
+                ? record.paymentMethod === 'cash' 
+                  ? "Thanh toán tại quầy" 
+                  : record.paymentMethod === 'momo'
+                  ? "Thành công (MoMo)"
+                  : "Thành công (VNPay)"
                 : status === "cancelled"
                 ? "Đã hủy (Hết hạn)"
+                : record.paymentMethod === 'momo'
+                ? "Chờ TT MoMo (Giữ 5p)"
                 : "Chờ TT VNPay (Giữ 5p)"}
             </Tag>
             {record.isCheckedIn ? (
@@ -543,13 +557,14 @@ export default function BookingList() {
       width: 155,
       align: "center" as const,
       render: (_: any, record: Booking) => {
-        const isUnpaidVnpay = (record.paymentMethod === 'vnpay' || !record.paymentMethod) && record.paymentStatus !== 'paid' && record.status === 'pending';
+        const isUnpaidOnline = record.paymentMethod !== 'cash' && record.paymentStatus !== 'paid' && record.status === 'pending';
+        const onlineName = record.paymentMethod === 'momo' ? 'MoMo' : 'VNPay';
 
         const menuItems: MenuProps['items'] = [
           {
             key: 'print',
-            label: record.isPrinted ? "🖨️ Vé đã được in" : isUnpaidVnpay ? "🔒 Chưa thanh toán VNPay" : "🖨️ In tất cả vé xem phim",
-            disabled: record.isPrinted || record.status === "cancelled" || isUnpaidVnpay,
+            label: record.isPrinted ? "🖨️ Vé đã được in" : isUnpaidOnline ? `🔒 Chưa thanh toán ${onlineName}` : "🖨️ In tất cả vé xem phim",
+            disabled: record.isPrinted || record.status === "cancelled" || isUnpaidOnline,
           },
           {
             type: 'divider',
@@ -561,7 +576,7 @@ export default function BookingList() {
           } : {
             key: 'checkin',
             label: "✅ Soát vé (Check-in)",
-            disabled: record.status === "cancelled" || isUnpaidVnpay,
+            disabled: record.status === "cancelled" || isUnpaidOnline,
           },
           {
             type: 'divider',
@@ -699,16 +714,17 @@ export default function BookingList() {
         onCancel={() => setDetail(null)}
       >
         {detail && (() => {
-          const isUnpaidVnpay = (detail.paymentMethod === 'vnpay' || !detail.paymentMethod) && detail.paymentStatus !== 'paid' && detail.status === 'pending';
+          const isUnpaidOnline = detail.paymentMethod !== 'cash' && detail.paymentStatus !== 'paid' && detail.status === 'pending';
+          const onlineName = detail.paymentMethod === 'momo' ? 'MoMo' : 'VNPay';
           const ticketStubs = getBookingTicketStubs(detail);
 
           return (
             <div>
               {/* Alert status */}
-              {isUnpaidVnpay ? (
+              {isUnpaidOnline ? (
                 <Alert
-                  message="🚫 CHƯA THANH TOÁN VNPAY ONLINE"
-                  description="Khách hàng chọn thanh toán VNPay nhưng chưa hoàn tất thanh toán. Đơn hàng đang giữ 5 phút. KHÔNG THỂ In vé hoặc Check-in!"
+                  message={`🚫 CHƯA THANH TOÁN ${onlineName.toUpperCase()} ONLINE`}
+                  description={`Khách hàng chọn thanh toán ${onlineName} nhưng chưa hoàn tất thanh toán. Đơn hàng đang giữ 5 phút. KHÔNG THỂ In vé hoặc Check-in!`}
                   type="error"
                   showIcon
                   style={{ marginBottom: 16 }}
@@ -745,10 +761,10 @@ export default function BookingList() {
                   alignItems: "center",
                   borderRadius: 14,
                   padding: 10,
-                  background: isUnpaidVnpay ? "#fff2f0" : "#fff",
-                  border: isUnpaidVnpay ? "2px dashed #ff4d4f" : "2px solid #1890ff"
+                  background: isUnpaidOnline ? "#fff2f0" : "#fff",
+                  border: isUnpaidOnline ? "2px dashed #ff4d4f" : "2px solid #1890ff"
                 }}>
-                  {isUnpaidVnpay ? (
+                  {isUnpaidOnline ? (
                     <>
                       <div style={{ fontSize: "2.5rem" }}>⏳</div>
                       <span style={{ color: "#ff4d4f", fontWeight: "bold", fontSize: "0.85rem", marginTop: 4, textAlign: "center" }}>CHƯA THANH TOÁN</span>
@@ -782,8 +798,12 @@ export default function BookingList() {
                 </Descriptions.Item>
 
                 <Descriptions.Item label="Phương thức thanh toán">
-                  <Tag color={detail.paymentMethod === 'cash' ? 'cyan' : 'blue'}>
-                    {detail.paymentMethod === 'cash' ? '💵 Thanh toán tại quầy' : '💳 Thanh toán VNPay Online'}
+                  <Tag color={detail.paymentMethod === 'cash' ? 'cyan' : detail.paymentMethod === 'momo' ? 'magenta' : 'blue'}>
+                    {detail.paymentMethod === 'cash' 
+                      ? '💵 Thanh toán tại quầy' 
+                      : detail.paymentMethod === 'momo'
+                      ? '📱 Ví MoMo (Sandbox)'
+                      : '💳 VNPay Gateway Online'}
                   </Tag>
                 </Descriptions.Item>
 
@@ -868,7 +888,7 @@ export default function BookingList() {
                             backgroundColor: stub.type === 'combo' ? '#fa8c16' : '#1890ff',
                             borderColor: stub.type === 'combo' ? '#fa8c16' : '#1890ff'
                           }}
-                          disabled={detail.isPrinted || detail.status === "cancelled" || isUnpaidVnpay}
+                          disabled={detail.isPrinted || detail.status === "cancelled" || isUnpaidOnline}
                           onClick={() => handlePrintSingleItem(detail, stub)}
                         >
                           🖨️ In vé này
@@ -885,19 +905,19 @@ export default function BookingList() {
                   type="primary"
                   size="large"
                   loading={printing}
-                  disabled={detail.isPrinted || detail.status === "cancelled" || isUnpaidVnpay}
+                  disabled={detail.isPrinted || detail.status === "cancelled" || isUnpaidOnline}
                   style={{
                     height: 44,
                     minWidth: 280,
                     fontSize: "0.95rem",
                     fontWeight: 600,
                     borderRadius: 8,
-                    backgroundColor: detail.isPrinted || isUnpaidVnpay ? "#8c8c8c" : "#722ed1",
-                    borderColor: detail.isPrinted || isUnpaidVnpay ? "#8c8c8c" : "#722ed1"
+                    backgroundColor: detail.isPrinted || isUnpaidOnline ? "#8c8c8c" : "#722ed1",
+                    borderColor: detail.isPrinted || isUnpaidOnline ? "#8c8c8c" : "#722ed1"
                   }}
                   onClick={() => handlePrintTicket(detail)}
                 >
-                  {isUnpaidVnpay ? "🔒 Khách chưa thanh toán (Khóa in)" : detail.isPrinted ? "⚠️ Vé đã được in (Khóa in)" : `🖨️ In TẤT CẢ ${ticketStubs.length} cuống vé cho khách`}
+                  {isUnpaidOnline ? "🔒 Khách chưa thanh toán (Khóa in)" : detail.isPrinted ? "⚠️ Vé đã được in (Khóa in)" : `🖨️ In TẤT CẢ ${ticketStubs.length} cuống vé cho khách`}
                 </Button>
               </div>
             </div>

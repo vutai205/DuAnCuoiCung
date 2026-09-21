@@ -77,7 +77,7 @@ export default function TicketHistory() {
         ) : (
           tickets.map((ticket, index) => {
             const isCash = ticket.paymentMethod === 'cash';
-            const isExpired = !isCash && (ticket.status === 'cancelled' || (ticket.status === 'pending' && ticket.expiresAt && new Date(ticket.expiresAt).getTime() < Date.now()));
+            const isExpired = ticket.status === 'cancelled' || (ticket.status === 'pending' && !isCash && ticket.expiresAt && new Date(ticket.expiresAt).getTime() < Date.now());
 
             return (
               <div
@@ -148,7 +148,7 @@ export default function TicketHistory() {
             </div>
 
             {/* If ticket is cancelled or expired 5 mins: DO NOT SHOW QR CODE */}
-            {selectedTicket.status === 'cancelled' || (selectedTicket.paymentMethod !== 'cash' && selectedTicket.expiresAt && new Date(selectedTicket.expiresAt).getTime() < Date.now()) ? (
+            {selectedTicket.status === 'cancelled' || (selectedTicket.status === 'pending' && selectedTicket.paymentMethod !== 'cash' && selectedTicket.expiresAt && new Date(selectedTicket.expiresAt).getTime() < Date.now()) ? (
               <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '2px dashed #ef4444', borderRadius: '12px', padding: '20px', textAlign: 'center', margin: '15px 0' }}>
                 <h3 style={{ color: '#ef4444', margin: '0 0 8px 0', fontSize: '1.2rem', fontWeight: 800 }}>🚫 VÉ NÀY ĐÃ BỊ HỦY BỎ</h3>
                 <p style={{ color: '#ff8a8a', margin: '0 0 8px 0', fontSize: '0.9rem' }}>Lý do: Đã quá thời hạn giữ chỗ 5 phút mà chưa hoàn tất thanh toán.</p>
@@ -224,7 +224,7 @@ export default function TicketHistory() {
             </div>
 
             <div className="ticket-modal-footer">
-              {selectedTicket.status === 'cancelled' || (selectedTicket.paymentMethod !== 'cash' && selectedTicket.expiresAt && new Date(selectedTicket.expiresAt).getTime() < Date.now()) ? (
+              {selectedTicket.status === 'cancelled' || (selectedTicket.status === 'pending' && selectedTicket.paymentMethod !== 'cash' && selectedTicket.expiresAt && new Date(selectedTicket.expiresAt).getTime() < Date.now()) ? (
                 <p style={{ fontSize: '0.85rem', color: '#ff4d4f', fontWeight: 600 }}>* Đơn hàng này không còn giá trị sử dụng (Đã hủy 5p).</p>
               ) : selectedTicket.status === 'pending' && selectedTicket.paymentMethod !== 'cash' ? (
                 <p style={{ fontSize: '0.85rem', color: '#eab308', fontWeight: 600 }}>⚠️ Vé chưa được thanh toán! Vui lòng hoàn tất thanh toán để nhận mã vé QR vào phòng chiếu.</p>

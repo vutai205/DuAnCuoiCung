@@ -355,7 +355,7 @@ exports.releaseSeats = async (req, res) => {
 exports.getBookingById = async (req, res) => {
     try {
         const { id } = req.params;
-        const cleanId = id ? id.trim() : '';
+        const cleanId = id ? id.trim().replace(/^#/, '') : '';
 
         if (!cleanId) {
             return res.status(400).json({ message: 'Mã tra cứu không được để trống' });

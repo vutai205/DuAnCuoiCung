@@ -2,30 +2,40 @@ const Room = require('../models/Room');
 const Showtime = require('../models/Showtime');
 const Booking = require('../models/Booking');
 
-// @desc    Get all rooms with showtimes & active bookings count
+// @desc    Get all rooms with active/upcoming showtimes & bookings count
 // @route   GET /api/rooms
 // @access  Public/Admin
 exports.getRooms = async (req, res) => {
     try {
         const rooms = await Room.find({}).lean();
+        const now = new Date();
 
         // Attach showtimes and active bookings stats to each room
         const roomsWithStats = await Promise.all(rooms.map(async (room) => {
-            const showtimes = await Showtime.find({ room: room._id });
-            const showtimeIds = showtimes.map(s => s._id);
+            const showtimes = await Showtime.find({ room: room._id }).populate('movie');
+            
+            // Chỉ tính các suất chiếu đang hoặc sắp diễn ra (chưa kết thúc)
+            const activeShowtimes = showtimes.filter(s => {
+                if (s.status === 'cancelled' || s.status === 'ended') return false;
+                const duration = (s.movie && s.movie.duration) ? s.movie.duration : 120;
+                const endTime = s.endTime ? new Date(s.endTime) : new Date(new Date(s.startTime).getTime() + duration * 60 * 1000);
+                return endTime >= now;
+            });
 
-            const activeBookingsCount = showtimeIds.length > 0
+            const activeShowtimeIds = activeShowtimes.map(s => s._id);
+
+            const activeBookingsCount = activeShowtimeIds.length > 0
                 ? await Booking.countDocuments({
-                    showtime: { $in: showtimeIds },
+                    showtime: { $in: activeShowtimeIds },
                     status: { $ne: 'cancelled' }
                 })
                 : 0;
 
             return {
                 ...room,
-                showtimesCount: showtimes.length,
+                showtimesCount: activeShowtimes.length,
                 bookingsCount: activeBookingsCount,
-                hasActiveData: showtimes.length > 0 || activeBookingsCount > 0
+                hasActiveData: activeShowtimes.length > 0 || activeBookingsCount > 0
             };
         }));
 
@@ -237,7 +247,7 @@ exports.updateRoom = async (req, res) => {
     }
 };
 
-// @desc    Delete a room (Validate no active showtimes or bookings exist)
+// @desc    Delete a room (Validate no active/upcoming showtimes or bookings exist)
 // @route   DELETE /api/rooms/:id
 // @access  Private/Admin
 exports.deleteRoom = async (req, res) => {
@@ -249,23 +259,32 @@ exports.deleteRoom = async (req, res) => {
             return res.status(404).json({ message: 'Không tìm thấy phòng chiếu!' });
         }
 
-        // 1. Kiểm tra xem phòng chiếu có gắn với bất kỳ suất chiếu nào không
-        const showtimes = await Showtime.find({ room: roomId });
-        if (showtimes && showtimes.length > 0) {
-            const showtimeIds = showtimes.map(s => s._id);
+        const now = new Date();
+        const showtimes = await Showtime.find({ room: roomId }).populate('movie');
+        
+        // Chỉ xét các suất chiếu chưa kết thúc (sắp chiếu hoặc đang diễn ra)
+        const activeShowtimes = showtimes.filter(s => {
+            if (s.status === 'cancelled' || s.status === 'ended') return false;
+            const duration = (s.movie && s.movie.duration) ? s.movie.duration : 120;
+            const endTime = s.endTime ? new Date(s.endTime) : new Date(new Date(s.startTime).getTime() + duration * 60 * 1000);
+            return endTime >= now;
+        });
+
+        if (activeShowtimes && activeShowtimes.length > 0) {
+            const activeShowtimeIds = activeShowtimes.map(s => s._id);
             const bookings = await Booking.find({
-                showtime: { $in: showtimeIds },
+                showtime: { $in: activeShowtimeIds },
                 status: { $ne: 'cancelled' }
             });
 
             if (bookings.length > 0) {
                 return res.status(400).json({
-                    message: `🚫 KHÔNG THỂ XÓA: Phòng chiếu "${room.name}" đang có ${showtimes.length} suất chiếu và ${bookings.length} đơn đặt vé hợp lệ của khách hàng!`
+                    message: `🚫 KHÔNG THỂ XÓA: Phòng chiếu "${room.name}" đang có ${activeShowtimes.length} suất chiếu chưa kết thúc và ${bookings.length} đơn đặt vé hợp lệ!`
                 });
             }
 
             return res.status(400).json({
-                message: `🚫 KHÔNG THỂ XÓA: Phòng chiếu "${room.name}" đang có ${showtimes.length} suất chiếu được lên lịch trong hệ thống. Vui lòng xóa các suất chiếu trước!`
+                message: `🚫 KHÔNG THỂ XÓA: Phòng chiếu "${room.name}" đang có ${activeShowtimes.length} suất chiếu sắp/đang diễn ra được lên lịch. Vui lòng hủy/xóa các suất chiếu này trước!`
             });
         }
 

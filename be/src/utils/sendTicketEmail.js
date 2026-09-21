@@ -1,5 +1,9 @@
 const sendEmail = require('./sendEmail');
 const Booking = require('../models/Booking');
+const User = require('../models/User');
+const Showtime = require('../models/Showtime');
+const Movie = require('../models/Movie');
+const Room = require('../models/Room');
 const QRCode = require('qrcode');
 
 /**
@@ -30,7 +34,11 @@ const sendTicketEmail = async (bookingId) => {
             ? booking.combos.map(c => `${c.name} (x${c.count})`).join(', ')
             : 'Không';
         const formattedTotal = booking.totalPrice ? booking.totalPrice.toLocaleString('vi-VN') + ' đ' : '0 đ';
-        const paymentMethodStr = booking.paymentMethod === 'cash' ? '💵 Thanh toán tại quầy' : '💳 Thanh toán VNPay Online';
+        const paymentMethodStr = booking.paymentMethod === 'cash' 
+            ? '💵 Thanh toán tại quầy' 
+            : booking.paymentMethod === 'momo'
+            ? '📱 Ví điện tử MoMo (Online)'
+            : '💳 Cổng thanh toán VNPay Online';
         const ticketCode = booking.ticketCode || booking._id.toString();
 
         // Generate QR code buffer for inline email attachment (CID)

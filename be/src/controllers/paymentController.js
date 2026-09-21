@@ -105,6 +105,7 @@ exports.vnpayReturn = async (req, res) => {
             if (booking) {
                 booking.status = 'confirmed';
                 booking.paymentStatus = 'paid';
+                booking.expiresAt = null;
                 await booking.save();
                 await deductFoodStock(booking);
 
@@ -213,6 +214,7 @@ exports.momoReturn = async (req, res) => {
             if (booking) {
                 booking.status = 'confirmed';
                 booking.paymentStatus = 'paid';
+                booking.expiresAt = null;
                 await booking.save();
                 await deductFoodStock(booking);
 

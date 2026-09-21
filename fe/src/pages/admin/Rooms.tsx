@@ -421,7 +421,7 @@ const Rooms: React.FC = () => {
         if (hasBookings) {
           return (
             <Tag color="volcano" style={{ fontWeight: 'bold' }}>
-              🔒 Đã có {record.bookingsCount} vé đặt ({record.showtimesCount} suất)
+              🔒 Đã có {record.bookingsCount} vé đặt ({record.showtimesCount} suất active)
             </Tag>
           );
         }
@@ -458,7 +458,7 @@ const Rooms: React.FC = () => {
           </Button>
 
           {record.hasActiveData ? (
-            <Tooltip title={`🚫 Khóa xóa: Phòng chiếu đang có ${record.showtimesCount || 0} suất chiếu và ${record.bookingsCount || 0} vé đã đặt!`}>
+            <Tooltip title={`🚫 Khóa xóa: Phòng chiếu đang có ${record.showtimesCount || 0} suất chiếu sắp/đang diễn ra và ${record.bookingsCount || 0} vé đã đặt!`}>
               <Button danger disabled icon={<DeleteOutlined />}>
                 Xóa
               </Button>

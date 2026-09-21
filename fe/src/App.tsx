@@ -103,11 +103,19 @@ function HomePage() {
   ).sort();
 
   const filteredMovies = movies.filter((movie) => {
+    // Ẩn các phim đã ngừng chiếu khỏi trang chủ
+    if (movie.status === 'ended') return false;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const movieReleaseStr = movie.releaseDate ? movie.releaseDate.split('T')[0] : '';
+    const isFutureRelease = Boolean(movieReleaseStr && movieReleaseStr > todayStr);
+    const isComingSoon = movie.status === 'coming_soon' || isFutureRelease;
+
     // Lọc theo Tab (Đang chiếu / Sắp chiếu)
     if (activeTab === 'showing') {
-      if (movie.status && movie.status !== 'now_showing') return false;
+      if (isComingSoon) return false;
     } else {
-      if (movie.status !== 'coming_soon') return false;
+      if (!isComingSoon) return false;
     }
 
     // Lọc theo Từ khóa tìm kiếm
@@ -214,7 +222,9 @@ function HomePage() {
             </div>
           ) : filteredMovies.length === 0 ? (
             <div className="no-movies-box" style={{ padding: '40px', textAlign: 'center', backgroundColor: '#111827', borderRadius: '12px', color: '#9ca3af' }}>
-              Không tìm thấy phim nào phù hợp với bộ lọc hiện tại.
+              {activeTab === 'upcoming' 
+                ? '⏳ Hiện chưa có phim nào trong danh sách Sắp Chiếu.' 
+                : '🎬 Không tìm thấy phim nào phù hợp với bộ lọc hiện tại.'}
             </div>
           ) : (
             <div className="movie-grid">

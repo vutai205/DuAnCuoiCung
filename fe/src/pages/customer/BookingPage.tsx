@@ -965,17 +965,6 @@ const BookingPage: React.FC = () => {
                   Ví Điện Tử MoMo (Sandbox)
                 </span>
               </label>
-
-              <label className={`payment-option ${paymentMethod === 'cash' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="cash"
-                  checked={paymentMethod === 'cash'}
-                  onChange={() => setPaymentMethod('cash')}
-                />
-                <span>💵 Thanh toán giữ chỗ tại quầy</span>
-              </label>
             </div>
 
             <button
